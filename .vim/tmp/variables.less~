@@ -1,0 +1,112 @@
+/*
+    Define variables for use in the pre-player LMSr.
+
+    Uncomment lines where client branding should override default branding.
+*/
+
+
+/* Media Queries, defines layout breakpoint */
+//@tablet-landscape: 1024px;
+//@tablet-portrait: 768px;
+//@phone-landscape: 767px;
+//@phone-portrait: 480px;
+
+// Course status colours
+//@lms-available: #3688C5;
+//@lms-started: #71AC62;
+//@lms-completed: #F06010;
+//@lms-refreshed: #6B56FF;
+
+/* Base colors */ 
+//@lms-error: #D10E14;
+//@lms-alert: #F0C828;
+//@lms-alert-dark: #FE7E00;
+@lms-light: #ffffff;
+@lms-dark: #b2d349;
+
+
+//First (top) header
+//@lms-global-header-bg: @lms-dark;
+//@lms-global-header-fg: #FFFFFF;
+
+//Sub header (holds logo)
+//@lms-sub-header-bg: @lms-light;
+@lms-sub-header-fg: @lms-dark;
+
+//@lms-body-background: transparent;
+//@lms-body-background-size: cover;
+
+//Login and change password forms
+@lms-form-bg: @lms-dark;
+@lms-form-fg: #000000;
+@lms-form-border: 1px solid #9fab50;
+
+//Form button
+@lms-form-login-bg: #9fab50;
+//@lms-form-login-fg: @lms-btn-inverse-fg;
+
+@lms-body-background: url('/img/client_backgrounds/magiccandyfactory.png')  no-repeat center center fixed;
+
+//Forgot username/password form background
+//@lms-forgotten-password-section-bg: @lms-banner-bg-clear;
+//@lms-forgotten-password-section-fg: @lms-banner-fg-clear;
+
+//Primary button
+//@lms-btn-bg: @lms-light;
+//@lms-btn-fg: #000000;
+
+//Inverse button styling
+//@lms-btn-inverse-bg: @lms-dark;
+//@lms-btn-inverse-fg: #FFFFFF;
+
+//Course and module title
+//@lms-course-select-banner-bg: @lms-light;
+//@lms-course-select-banner-fg: @lms-dark;
+//Course and module details
+@lms-course-entry-bg: #ffffff;
+//@lms-course-entry-fg: inherit;
+
+//Various banners
+//@lms-banner-border: @lms-light;
+@lms-banner-bg-clear: #ffffff;
+@lms-banner-fg-clear: #000000;
+//Welcome bar
+@lms-banner-bg-light: @lms-dark;
+@lms-banner-fg-light: #000000;
+//@lms-banner-bg-dark: @lms-dark;
+//@lms-banner-fg-dark: #FFFFFF;
+//@lms-banner-bg-alert: @lms-alert;
+//@lms-banner-fg-alert: @lms-dark;
+
+//Footer
+//@lms-global-footer-bg: @lms-dark;
+//@lms-global-footer-fg: #FFFFFF;
+//@lms-global-footer-height: 80px;
+
+//Client Branding Hidden Elements
+//@lms-global-header-help-display: inline-block;
+//@lms-forgotten-password-vis: visible;
+@lms-help-banner-vis: hidden;
+@lms-help-banner-display: none;
+//@lms-powered-by-label-display: inline-block;
+//@lms-client-logo-display: inline-block;
+//@lms-change-password-display: inline-block;
+//@lms-change-password-footer-display: block;
+//@lms-password-hint-vis: visible;
+
+//Client's logo background colour
+//@lms-client-logo-bg: #FFF;
+
+//Colour used for square bullet points
+//@bullet-point-color: #f68d12;
+
+//Upskill logo in Footer
+// "usp-white" also available as a completely white logo
+@lms-usp-footer-logo: url('/page_components/images/usp-white.png') no-repeat;
+
+// Help hand located in global header
+// "help_hand_static_black" also available
+//@lms-header-help-hand: url('/page_components/images/help_hand_static.png') no-repeat;
+
+//The help hand located next to the login form
+//@lms-login-help-hand: @lms-header-help-hand;

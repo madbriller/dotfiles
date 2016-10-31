@@ -1,0 +1,359 @@
+<?php
+
+namespace ActiveHousing\Http\Controllers;
+
+use Gate;
+use View;
+use Illuminate\Http\Request;
+use ActiveHousing\Models\BaseModel;
+use Illuminate\Validation\Validator;
+use ActiveHousing\Repositories\SORRepository;
+use ActiveHousing\Http\Controllers\Controller;
+use ActiveHousing\Repositories\ProblemRepository;
+use ActiveHousing\Repositories\QuestionRepository;
+use ActiveHousing\Repositories\AttributeRepository;
+
+class SORRecordController extends AbstractEntityController
+{
+    /**
+     * The validation rules for this controller
+     * @var array
+     */
+    protected $validationRules = [
+        'Code' => 'string|required',
+        'Label' => 'string|required',
+        'Description' => 'string|required',
+        'PriorityID' => 'integer|required',
+        'SMV' => 'integer|required',
+        'EstimationQuestion' => 'required_with:EstimationOptions|string|max:1024',
+        'EstimationOptions' => 'required_with:EstimationQuestion|array',
+        'Attributes' => 'array'
+    ];
+
+    /**
+     * The SOR fields which are fillable by this controller.
+     * @var array
+     */
+    protected $sorFields = [
+        'Code',
+        'Label',
+        'Description',
+        'PriorityID',
+        'SMV',
+        'EstimationQuestion',
+        'Attributes' 
+    ];
+
+    /**
+     * A list of field names and their human readable form.
+     * @var array
+     */
+    private $attributeNames = [
+        'SMV' => 'SMV'
+    ];
+
+    /**
+     * The problem repository instance.
+     * @var ActiveHousing\Repositories\ProblemRepository
+     */
+    protected $problemRepository;
+
+    /**
+     * The question repository instance.
+     * @var ActiveHousing\Repositories\ProblemRepository
+     */
+    protected $questionRepository;
+
+    /**
+     * The controller constructor
+     * @param \ActiveHousing\Repositories\SORRepository
+     */
+    public function __construct(
+        Request $request,
+        SORRepository $SORRepository,
+        ProblemRepository $problemRepository,
+        QuestionRepository $questionRepository
+    ) {
+        parent::__construct($request, $SORRepository);
+
+        $this->problemRepository = $problemRepository;
+        $this->questionRepository = $questionRepository;
+    }
+
+    /**
+     * Displays all SOR Records
+     * @return \Illuminate\Http\Reponse
+     */
+    public function index()
+    {
+        return view('pages.dashboard.SORRecord.index');
+    }
+
+    /**
+     * Display a form to add or edit an SOR record.
+     * @param ActiveHousing\Models\BaseModel The SOR Record to view/edit.
+     * @return Illuminate\Http\Response
+     */
+    public function addEdit(BaseModel $sor)
+    {
+        if (!$sor->getOriginal() && Gate::denies('add-entities')) {
+            abort(404);
+        }
+
+        return view('pages.dashboard.SORRecord.addEdit', [
+            'sor' => $sor,
+            'relationsDisabled' => Gate::allows('edit-entity-relations') ? '' : 'disabled'
+        ]);
+    }
+
+    /**
+     * Persist an SOR Record.
+     * @param \ActiveHousing\Model\BaseModel $model
+     * @param \ActiveHousing\Repositories\AttributeRepository $attributeRepository
+     * @return \Illuminate\Http\Response
+     */
+    public function store(BaseModel $model, AttributeRepository $attributeRepository)
+    {
+        $attributes = $attributeRepository->all()->toArray();
+
+        $this->validationRules = $this->addAttributeRules(
+            $this->validationRules,
+            $attributes
+        );
+
+        $validationAttributes = $this->addAttributeAttributes($this->attributeNames, $attributes);
+
+        $validationAttributes = $this->addEstimationOptionAttributes($validationAttributes, $attributes);
+
+        $validator = $this->getValidationFactory()->make(
+            $this->request->all(),
+            $this->validationRules,
+            [
+                'EstimationQuestion.required_with' => trans('sor.EstimationQuestion.required_with'),
+                'SMV.integer' => trans('sor.SMV.integer'),
+                'EstimationOptions.required_with' => trans('sor.EstimationOptions.required_with')
+            ],
+            $validationAttributes
+        );
+        
+        //Invoked after the validator is created as it uses sometimes().
+        $this->addEstimationOptionRules($validator);
+
+        dd($validator->errors);
+        if ($validator->fails()) {
+            $this->throwValidationException($this->request, $validator);
+        }
+
+        //If there are empty estimation options we don't add them to the sor fields.
+        if ($this->request->has('EstimationOptions')) {
+            foreach ($this->request->EstimationOptions as $key => $option) {
+                if ($option['Label'] !== '' && $option['Value'] !== '') {
+                    $this->sorFields[] = 'EstimationOptions.'.$key.'.Value';
+                    $this->sorFields[] = 'EstimationOptions.'.$key.'.Label';
+                }
+            }
+        } else {
+            //If there are no estimation options we assume they were to be cleared.
+            $model->EstimationOptions = [];
+        }
+
+        $model->fill(
+            $this->request->only($this->sorFields),
+            $this->nullableAttributes($attributes)
+        );
+
+        return $this->redirectOnSave($model, 'SORRecordController@index');
+    }
+
+    /**
+     * Adds validation rules for each attribute that is present in the system.
+     * @param array $validationRules
+     * @param array $attributes
+     * @return array
+     */
+    private function addAttributeRules(array $validationRules, array $attributes)
+    {
+        foreach ($attributes as $attribute) {
+            $fieldName = sprintf(
+                'Attributes.%s',
+                $attribute['Name']
+            );
+
+            $validationRules[$fieldName] = 'required|integer';
+        }
+
+        return $validationRules;
+    }
+
+    /**
+     * Adds attribute names for each attribute in the system.
+     * @param array $attributes
+     * @return array
+     */
+    private function addAttributeAttributes(
+        array $validationAttributes,
+        array $attributes
+    ) {
+        foreach ($attributes as $attribute) {
+            $validationAttributes['Attribute.'.$attribute['Name']] = trans($attribute['Name']);
+        }
+
+        return $validationAttributes;
+    }
+
+    /**
+     * Sets all present attributes as nullable.
+     * @param array $attributes
+     * @return array
+     */
+    private function nullableAttributes(array $attributes)
+    {
+        $nullableFields = [];
+
+        foreach ($attributes as $attribute) {
+            $nullableFields[$attribute['Name']] = '0';
+        }
+
+        return $nullableFields;
+    }
+
+    /**
+     * Adds conditional validation rules for each given estimation option.
+     * @param Illuminate\Validation\Validator $validator
+     * @return void
+     */
+    private function addEstimationOptionRules(Validator $validator)
+    {
+        if (is_array($this->request->EstimationOptions)) {
+            foreach ($this->request->EstimationOptions as $key => $option) {
+
+                $validator->sometimes('EstimationOptions.'.$key.'.Label', 'required|string|max:255', function($input) use ($key) {
+                    return $input['EstimationOptions'][$key]['Value'] !== '';
+                });
+
+                $validator->sometimes('EstimationOptions.'.$key.'.Value', 'required|numeric|regex:/^\d{1,5}(\.\d{1,2})?$/', function($input) use ($key) {
+                    return $input['EstimationOptions'][$key]['Label'] !== '';
+                });
+
+            }
+        }
+    }
+
+    /**
+     * Adds attribute names for each given estimation option.
+     * @param array $attributes
+     * @return array
+     */
+    private function addEstimationOptionAttributes(array $attributes)
+    {
+        if (is_array($this->request->EstimationOptions)) {
+            foreach ($this->request->EstimationOptions as $key => $option) {
+                $attributes['EstimationOptions.'.$key.'.Label'] = trans('dashboard.Label');
+                $attributes['EstimationOptions.'.$key.'.Value'] = trans('dashboard.Value');
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Retrieves all SOR Records as json.
+     * @return Illuminate\Http\Response
+     */
+    public function all()
+    {
+        $records = $this->primaryRepository->all()->keyBy('SORID');
+        $problems = $this->problemRepository->all();
+        $answers = $this->questionRepository->all()->pluck('Answers')->collapse();
+
+        foreach ($problems as $problem) {
+            if ($problem->DefaultSORID !== null) {
+                $recordProblems = $records[$problem->DefaultSORID]->Problems;
+
+                $recordProblems[] = $problem;
+
+                $records[$problem->DefaultSORID]->Problems = $recordProblems;
+            }
+        }
+
+        foreach ($answers as $answer) {
+            if ($answer['ResultingSORID'] !== null) {
+                $recordAnswers = $records[$answer['ResultingSORID']]->Answers;
+
+                $recordAnswers[] = $answer;
+
+                $records[$answer['ResultingSORID']]->Answers = $recordAnswers;
+            }
+        }
+
+        $data = array();
+
+        $archiveEnabled = Gate::allows('archive-entities');
+
+        foreach($records as $record) {
+            $actions = ['partials.actions.editButton'];
+
+            $viewData = [
+                'objectId' => $record->SORID,
+                'objectName' => $record->Code,
+                'editAction' => action(
+                    'SORRecordController@addEdit',
+                    ['record' => $record->SORID]
+                )
+            ];
+
+            if ($archiveEnabled) {
+                $actions[] = 'partials.actions.archiveButton';
+
+                $viewData['attached'] = (bool)count($record->Problems) || (bool)count($record->Answers);
+                $viewData['archiveDisabledText'] = trans('sor.ArchiveDisabled');
+            }
+
+            $data[] = [
+                $record->Code,
+                $record->Label,
+                View::make('partials.actionGroup', [
+                    'actions' => $actions,
+                    'data' => $viewData 
+                ])->render()
+            ];
+        }
+
+        return response()->json(['success' => true, 'data' => $data], 200);
+    }
+
+    /**
+     * Retrieves all archived SOR Records as json
+     * @return Illuminate\Http\Response
+     */
+    public function allArchived()
+    {
+        $records = $this->primaryRepository->allArchived();
+
+        $data = array();
+
+        $restoreEnabled = Gate::allows('restore-entities');
+
+        foreach($records as $record) {
+            $actions = array();
+
+            if ($restoreEnabled) {
+                $actions[] = 'partials.actions.restoreButton';
+            }
+
+            $data[] = [
+                $record->Code,
+                $record->Label,
+                View::make('partials.actionGroup', [
+                    'actions' => $actions,
+                    'data' => [
+                        'objectId' => $record->SORID,
+                        'objectName' => $record->Code
+                    ]
+                ])->render()
+            ];
+        }
+
+        return response()->json(['success' => true, 'data' => $data], 200);
+    }
+}

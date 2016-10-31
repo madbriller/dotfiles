@@ -1,0 +1,13 @@
+<p>Hi {{user.firstName}},</p>
+<p>Welcome to the Coop College</p>
+<p>Your new online learning account has been created and you can now go and experience some great training from The Coop College and Upskill People. </p>
+<p>So what do you need to do?</p>
+<p>Click on the link below to get started, our online learning platform can be accessed from your mobile phone, tablet, laptop or PC.</p>
+<p><a href="http://coopcollegeportal.usplive.com">http://coopcollegeportal.usplive.com</a></p>
+<p>Your login details are: </p>
+<p>
+    Username: {{user.userName}} </br>
+    Password: {{user.password}} </br>
+</p>
+<p>The site is really easy to navigate and we are sure you'll be able to access your courses but If you experience any problems please contact us at <a href="mailto:support@upskillpeople.com">support@upskillpeople.com</a></p>
+<p>Regards, The team at Upskill People</p>

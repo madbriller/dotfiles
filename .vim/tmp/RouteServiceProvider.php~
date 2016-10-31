@@ -1,0 +1,96 @@
+<?php
+
+namespace ActiveHousing\Providers;
+
+use Illuminate\Routing\Router;
+use ActiveHousing\Repositories\SORRepository;
+use ActiveHousing\Repositories\UserRepository;
+use ActiveHousing\Repositories\AuditRepository;
+use ActiveHousing\Contracts\RepositoryInterface;
+use ActiveHousing\Repositories\ProblemRepository;
+use ActiveHousing\Repositories\SettingRepository;
+use ActiveHousing\Repositories\QuestionRepository;
+use ActiveHousing\Repositories\PriorityRepository;
+use ActiveHousing\Repositories\RepairItemRepository;
+use ActiveHousing\Repositories\AttributeValueRepository;
+use ActiveHousing\Repositories\ReportRepository;
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+
+class RouteServiceProvider extends ServiceProvider
+{
+    /**
+     * This namespace is applied to the controller routes in your routes file.
+     *
+     * In addition, it is set as the URL generator's root namespace.
+     *
+     * @var string
+     */
+    protected $namespace = 'ActiveHousing\Http\Controllers';
+
+    /**
+     * Define your route model bindings, pattern filters, etc.
+     *
+     * @param  \Illuminate\Routing\Router  $router
+     * @return void
+     */
+    public function boot(Router $router)
+    {
+        $router->pattern('id', '[0-9]+');
+        $router->pattern('problem', '[0-9]+');
+        $router->pattern('category', '[0-9]+');
+        $router->pattern('question', '[0-9]+');
+        $router->pattern('record', '[0-9]+');
+        $router->pattern('attributeValue', '[0-9]+');
+        $router->pattern('user', '[0-9]+');
+        $router->pattern('audit', '[0-9]+');
+        $router->pattern('priority', '[0-9]+');
+
+        $router->bind('problem', $this->getModelBindCallback(ProblemRepository::class));
+        $router->bind('category', $this->getModelBindCallback(RepairItemRepository::class));
+        $router->bind('question', $this->getModelBindCallback(QuestionRepository::class));
+        $router->bind('record', $this->getModelBindCallback(SORRepository::class));
+        $router->bind('attributeValue', $this->getModelBindCallback(AttributeValueRepository::class));
+        $router->bind('user', $this->getModelBindCallback(UserRepository::class));
+        $router->bind('audit', $this->getModelBindCallback(AuditRepository::class));
+        $router->bind('priority', $this->getModelBindCallback(PriorityRepository::class));
+        $router->bind('setting', $this->getModelBindCallback(SettingRepository::class));
+        $router->bind('report', $this->getModelBindCallback(ReportRepository::class));
+
+        parent::boot($router);
+    }
+
+    /**
+     * Define the routes for the application.
+     *
+     * @param  \Illuminate\Routing\Router  $router
+     * @return void
+     */
+    public function map(Router $router)
+    {
+        $router->group(['namespace' => $this->namespace], function ($router) {
+            require app_path('Http/routes.php');
+        });
+    }
+
+    /**
+     * Returns the callback used to bind a model to a route.
+     * @param \ActiveHousing\Contracts\RepositoryInterface
+     * @return function
+     */
+    public function getModelBindCallback($repoName)
+    {
+        $app = $this->app;
+
+        return function($value) use ($repoName, $app) {
+            $repo = $app[$repoName];
+
+            $model = $repo->find($value);
+
+            if ($model === null) {
+                abort(404);
+            }
+
+            return $model;
+        };
+    }
+}

@@ -1,0 +1,87 @@
+<?php
+
+namespace ActiveHousing\Repositories;
+
+use ActiveHousing\Models\BaseModel;
+
+class JobStatusRepository extends AbstractEntityRepository
+{
+    /**
+     * The repositories endpoint.
+     *
+     * @var array[string]
+     */
+    protected $endpoint = ['reportAvailability'];
+
+    /**
+     * The primary key of the endpoint.
+     *
+     * @var string
+     */
+    protected $primaryKey = '';
+
+    /**
+     * Find an entity by id.
+     *
+     * @param int $id
+     *
+     * @stubbed:
+     * @return null
+     */
+    public function find($id)
+    {
+        return null;
+    }
+
+    /**
+     * Retrieves all archived reports.
+     *
+     * @stubbed:
+     * @return Illuminate\Support\Collection
+     */
+    public function allArchived()
+    {
+        return $this->newCollection();
+    }
+
+    /**
+     * Archives a report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function archive(BaseModel $model)
+    {
+        return false;
+    }
+
+    /**
+     * Restores an archived report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function restore($id)
+    {
+        return false;
+    }
+
+    /**
+     * Returns the availability for a given report.
+     *
+     * @param int $reportId
+     *
+     * @return Illuminate\Support\Collection
+     */
+    public function forReport($id)
+    {
+        $uriPath = $this->endpointBuilder
+            ->withSegments($this->endpoint)
+            ->withQuery('reportId', $id)
+            ->build();
+
+        $response = $this->callApi('GET', $uriPath);
+
+        return $this->buildCollection($response);
+    }
+}

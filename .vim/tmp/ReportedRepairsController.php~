@@ -1,0 +1,121 @@
+<?php
+
+namespace ActiveHousing\Http\Controllers;
+
+use ActiveHousing\Repositories\ReportProblemRepository;
+use ActiveHousing\Repositories\JobStatusRepository;
+use ActiveHousing\Repositories\ReportRepository;
+use ActiveHousing\Models\BaseModel;
+use ActiveHousing\Repositories\SORRepository;
+use Carbon\Carbon;
+use Gate;
+use Illuminate\Http\Request;
+use View;
+
+class ReportedRepairsController extends Controller
+{
+    /**
+     * Controller constructor.
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return void
+     */
+    public function __construct(
+        Request $request,
+        ReportRepository $reportRepository,
+        ReportProblemRepository $reportProblemRepository,
+        SORRepository $SORRepository,
+        JobStatusRepository $jobStatusRepository
+    ) {
+        parent::__construct($request);
+
+        $this->reportRepository = $reportRepository;
+        $this->reportProblemRepository = $reportProblemRepository;
+        $this->SORRepository = $SORRepository;
+        $this->jobStatusRepository = $jobStatusRepository;
+    }
+
+    /**
+     * Shows a listing of all reported repairs.
+     *
+     * @return Illuminate\Http\Response
+     */
+    public function index()
+    {
+        return view('pages.dashboard.repairs.index', [
+            'jobStatuses' => $this->jobStatusRepository->all()
+        ]);
+    }
+
+    /**
+     * Shows a report.
+     *
+     * @param ActiveHousing\Models\BaseModel $report
+     *
+     * @return Illuminate\Http\Response
+     */
+    public function show(BaseModel $report)
+    {
+        $date = Carbon::createFromFormat('Y-m-d H:i:s', $report->Created);
+
+        return view('pages.dashboard.repairs.show', [
+            'report' => $report,
+            'problems' => $this->reportProblemRepository->forReport($report->ReportID),
+            'answers' => $this->reportProblemAnswerRepository->forReport($report->ReportID),
+            'created' => $date->format('d M Y H:i')
+        ]);
+    }
+
+    /**
+     * Returns a list of paginated reports encoded as json.
+     *
+     * @return void
+     */
+    public function paginate()
+    {
+        $validationRules = [
+            'limit' => 'required|integer',
+            'offset' => 'required|integer',
+            'jobStatuses' => 'array'
+        ];
+
+        $this->validate(
+            $this->request,
+            $validationRules
+        );
+
+        $result = $this->reportRepository
+            ->paginate(
+                $this->request->input('limit'),
+                $this->request->input('offset'),
+                $this->request->input('jobStatuses', [])
+            );
+
+        $reports = $result['data']
+            ->keyBy('ReportID')
+            ->each(function ($item) {
+                $item->Problems = collect();
+            });
+
+        $reportProblems = $this->reportProblemRepository
+            ->all();
+
+        foreach ($reportProblems as $problem) {
+
+            if (isset($reports[$problem->ReportID])) {
+                $reports[$problem->ReportID]
+                    ->Problems
+                    ->push($problem);
+            }
+        }
+
+        return response()->json(
+            [
+                'data' => $reports,
+                'meta' => $result['meta']
+            ],
+            200
+        );
+    }
+}

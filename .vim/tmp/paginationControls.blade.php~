@@ -1,0 +1,14 @@
+<ul class="pagination">
+    <li class="pagination-summary">
+    </li>
+    <li class="disabled">
+        <a href="#" class="js-previous">
+            Previous
+        </a>
+    </li>
+    <li>
+        <a href="#" class="js-next">
+            Next
+        </a>
+    </li>
+</ul>

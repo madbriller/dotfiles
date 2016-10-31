@@ -1,0 +1,125 @@
+<?php
+namespace ActiveHousing\Endpoint;
+
+use ActiveHousing\Contracts\BuilderInterface;
+
+class Builder implements BuilderInterface
+{
+    /**
+     * The base uri used to build the endpoint.
+     * @var string
+     */
+    protected $base_uri;
+
+    /**
+     * The uri segments which shall be built.
+     * @var array
+     */
+    protected $segments = array();
+
+    /**
+     * The query string parameters which shall be built.
+     * @var array
+     */
+    protected $queries = array();
+
+    /**
+     * Constructs the endpoint builder instance.
+     * @param string $base_uri The uri to use as the base
+     */
+    public function __construct($base_uri)
+    {
+        $this->base_uri = (string)$base_uri;
+    }
+
+    /**
+     * Builds the object represented by internal state.
+     * @return mixed
+     */
+    public function build()
+    {
+        $template = '%s';
+        $parts = [$this->base_uri];
+
+        if (!empty($this->segments)) {
+            $template .= '/%s';
+            $parts[] = implode('/', $this->segments);
+        }
+
+        if (!empty($this->queries)) {
+            $template .= '?%s';
+            $parts[] = http_build_query(
+                $this->queries,
+                '',
+                ini_get('arg_separator.output'),
+                \PHP_QUERY_RFC3986
+            );
+        }
+
+        $result = vsprintf(
+            $template,
+            $parts
+        );
+
+        $this->clear();
+
+        return $result;
+    }
+
+    /**
+     * Clears the internal state of the builder.
+     * @return void
+     */
+    public function clear()
+    {
+        $this->segments = array();
+        $this->queries = array();
+    }
+
+    /**
+     * Adds a uri segment to the builder.
+     * @param string $segment The segment to add.
+     * @return ActiveHousing\Builder\EndpointBuilder
+     */
+    public function withSegment($segment)
+    {
+        $this->segments[] = $segment;
+
+        return $this;
+    }
+
+    /**
+     * Adds multiple uri segments to the builder.
+     * @param array $segments The segments to add.
+     * @return ActiveHousing\Builder\EndpointBuilder
+     */
+    public function withSegments(array $segments)
+    {
+        $this->segments = array_merge($this->segments, array_values($segments));
+
+        return $this;
+    }
+
+    /**
+     * Adds a query string parameter to the builder.
+     * @param string $key The key of the parameter.
+     * @param string $value The value of the parameter.
+     */
+    public function withQuery($key, $value)
+    {
+        $this->queries[$key] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Adds multiple query string parameters to the builder.
+     * @param array $queries The list of key value pairs to query.
+     */
+    public function withQueries(array $queries)
+    {
+        $this->queries += $queries;
+
+        return $this;
+    }
+}

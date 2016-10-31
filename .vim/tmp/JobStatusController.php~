@@ -1,0 +1,21 @@
+<?php
+
+namespace ActiveHousingAPI\Http\Controllers;
+
+use ActiveHousingAPI\Models\JobStatus;
+
+class JobStatusController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @param \ActiveHousingAPI\Models\JobStatus $query
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(JobStatus $query)
+    {
+        \Log::info($query->get());
+        return $this->respondSuccess($query->get());
+    }
+}

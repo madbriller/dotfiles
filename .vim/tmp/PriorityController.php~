@@ -1,0 +1,113 @@
+<?php
+
+namespace ActiveHousingAPI\Http\Controllers;
+
+use Validator;
+use Illuminate\Http\Request;
+use ActiveHousingAPI\Models\AbstractModel;
+use ActiveHousingAPI\Models\Priority;
+use ActiveHousingAPI\Http\Controllers\Controller;
+
+class PriorityController extends Controller
+{
+    /**
+     * The form validation rule template.
+     * @var array
+     */
+    protected $validationRulesTemplate = [
+       'Code' => 'string|max:255',
+       'Label' => 'string|max:255',
+    ];
+
+    /**
+     * Display a listing of the resource.
+     * @param \ActiveHousingAPI\Models\Priority
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Priority $query)
+    {
+        $this->doValidation([
+            'sort' => 'in:Code,Label|required_with:sortDirection',
+            'sortDirection' => 'in:asc,desc',
+            'archived' => 'boolean',
+        ]);
+
+        if ($this->request->has('sort')){
+            $direction = $this->request->input('sortDirection', 'asc');
+
+            $query = $query->orderBy($this->request->sort, $direction);
+        }
+
+        return $this->respondSuccess($query->get());
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Priority $priority)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['Code'] .= '|required|modelUnique:ActiveHousingAPI\Models\Priority,Code';
+        $validationRules['Label'] .= '|required';
+
+        $this->doValidation($validationRules);
+
+        $this->doSave($priority);
+
+        return $this->respondSuccess(['id' => $priority->PriorityID]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \ActiveHousingAPI\Models\Priority $priority
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Priority $priority)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['Code'] .= '|modelUnique:ActiveHousingAPI\Models\Priority,Code,'.$priority->PriorityID.',PriorityID';
+
+        $this->doValidation($validationRules);
+
+        $this->doSave($priority);
+
+        return $this->respondSuccess([
+            'id' => $priority->PriorityID,
+        ]);
+    }
+
+    /**
+     * Delete the specified priority, if there are no attached SOR Records.
+     *
+     * @param  \ActiveHousingAPI\Models\Priority $priority
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(AbstractModel $priority)
+    {
+        if ($priority->SOR()->count() === 0) {
+            $priority->forceDelete();
+
+            return $this->respondSuccess();
+        }
+
+        return $this->respondBadRequest(['General' => trans('errors.RemoveFailed')]);
+    }
+
+    /**
+     * Persists a given priority model to the database.
+     * @param \ActiveHousingAPI\Models\Priority $priority
+     * @return void
+     */
+    private function doSave(Priority $priority)
+    {
+        $priority->Code = $this->request->input('Code', $priority->Code);
+        $priority->Label = $this->request->input('Label', $priority->Label);
+
+        $priority->save();
+    }
+}

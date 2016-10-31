@@ -1,0 +1,12 @@
+<?php
+
+return [
+    'Reported' => 'Reported',
+    'ReportedRepairs' => 'Reported Repairs',
+    'ReportedRepair' => 'Reported Repair',
+    'CreatedDate' => 'Created: %s',
+    'NoFilters' => '<div class="text-center text-muted">You currently have no filters selected.</div>',
+    'Repair' => 'Repair #%s',
+    'TenantInformation' => 'Tenant Information',
+    'Availability' => 'Availability'
+];

@@ -1,0 +1,9 @@
+URxvt*geometry:                      100x30
+URxvt*scrollBar:                      false
+URxvt*background:                     #353945
+URxvt*foreground:                     #EFEFEF
+URxvt*font:                             xft:Fira Mono:size=10
+urxvt*perl-lib:            /usr/lib/urxvt/perl/
+urxvt*perl-ext-common:        default,matcher
+urxvt*url-launcher:        /usr/bin/google-chrome
+urxvt*matcher.button:        1

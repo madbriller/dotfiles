@@ -1,0 +1,74 @@
+<?php
+
+namespace ActiveHousing\Repositories;
+
+use ActiveHousing\Models\BaseModel;
+
+class ReportProblemRepository extends AbstractEntityRepository
+{
+    /**
+     * The repositories endpoint.
+     *
+     * @var array[string]
+     */
+    protected $endpoint = ['reportProblem'];
+
+    /**
+     * The primary key of the endpoint.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'ReportProblemID';
+
+    /**
+     * Retrieves all archived reports.
+     *
+     * @stubbed:
+     * @return Illuminate\Support\Collection
+     */
+    public function allArchived()
+    {
+        return $this->newCollection();
+    }
+
+    /**
+     * Archives a report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function archive(BaseModel $model)
+    {
+        return false;
+    }
+
+    /**
+     * Restores an archived report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function restore($id)
+    {
+        return false;
+    }
+
+    /**
+     * Returns all report problems for a given Report id.
+     *
+     * @param int $reportId The report id to use to search.
+     *
+     * @return Illuminate\Support\Collection
+     */
+    public function forReport($reportId)
+    {
+        $uriPath = $this->endpointBuilder
+            ->withSegments($this->endpont)
+            ->withQuery('ReportID', $reportId)
+            ->build();
+
+        $response = $this->callApi('GET', $uriPath);
+
+        return $this->buildCollection($response);
+    }
+}

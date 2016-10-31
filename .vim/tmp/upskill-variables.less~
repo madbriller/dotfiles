@@ -1,0 +1,65 @@
+@tablet-landscape: 1024px;
+@tablet-portrait: 768px;
+@phone-landscape: 767px;
+@phone-portrait: 480px;
+@lms-error: #D10E14;
+@lms-alert: #F0C828;
+@lms-alert-dark: #FE7E00;
+@lms-dark: #000;
+@lms-light: #CDCDCD;
+@lms-lighter: #EDEDED;
+@lms-light-dark: #ABABAB;
+@lms-available: #3688C5;
+@lms-started: #71AC62;
+@lms-completed: #F06010;
+@lms-refreshed: #6B56FF;
+
+@header-background: #ffffff;
+@header-foreground: @lms-dark;
+@footer-background: @lms-dark;
+@footer-foreground: #FFFFFF;
+@body-background: transparent;
+@body-background-size: cover;
+
+@client-logo-background: #FFF;
+
+//The sidebar background
+@filter-bg: url("/page_components/css/images/overlay-dark.png") repeat;
+@filter-bg-fallback: @filter-bg;
+
+//The controls on the filter sidebar
+@filter-controls-bg: #fe7e00;
+@filter-controls-bg-hover: @filter-controls-bg;
+@filter-controls-fg: #FFFFFF;
+
+//The switch that opens the filters
+@filter-inactive-header-toggle-bar-outer: #AAA;
+@filter-inactive-header-toggle-bar-middle: #CCC;
+
+//The switch that opens the filters; whilst filters are active
+@filter-active-header-toggle-bar-outer: @filter-controls-bg;
+@filter-active-header-toggle-bar-middle: #D99B54;
+
+//The switch that opens the filters; whilst animating due to filter state being switched
+@filter-animate-header-toggle-bar-outer: #FFF;
+@filter-animate-header-toggle-bar-middle: #FFF;
+
+//The labels above a filter dropdown on the sidebar
+@filter-label-bg: #4F4E4E;
+@filter-label-active-bg: @lms-alert-dark;
+
+//The dropdown accessed by the cog next to each filter type
+@filter-option-dropdown-bg: @filter-controls-bg;
+@filter-option-dropdown-fg: #FFF;
+
+//The group by section on the filter sidebar
+@filter-group-by-bg: @filter-controls-bg;
+
+//The content area background
+@content-background-fallback: rgb(255,255,255);
+@content-background: rgba(255,255,255, 0.85);
+
+@usp-footer-logo: url('/page_components/images/UpSkill_logo.png') no-repeat;
+@powered-by-label-display: inline-block;
+
+@footer-help-hand: url('/page_components/images/help_hand_static.png') no-repeat;

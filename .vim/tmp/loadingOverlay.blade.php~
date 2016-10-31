@@ -1,0 +1,6 @@
+<div class="loader">
+    <div class="loader-message text-center">
+        <div><h3><strong>{{ trans('dashboard.Updating') }}</strong></h3></div>
+        <i class="fa fa-spinner fa-pulse fa-3x"></i>
+    </div>
+</div>

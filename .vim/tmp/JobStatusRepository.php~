@@ -1,0 +1,55 @@
+<?php
+
+namespace ActiveHousing\Repositories;
+
+use ActiveHousing\Models\BaseModel;
+
+class JobStatusRepository extends AbstractEntityRepository
+{
+    /**
+     * The repositories endpoint.
+     *
+     * @var array[string]
+     */
+    protected $endpoint = ['jobStatus'];
+
+    /**
+     * The primary key of the endpoint.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'JobStatusID';
+
+    /**
+     * Retrieves all archived reports.
+     *
+     * @stubbed:
+     * @return Illuminate\Support\Collection
+     */
+    public function allArchived()
+    {
+        return $this->newCollection();
+    }
+
+    /**
+     * Archives a report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function archive(BaseModel $model)
+    {
+        return false;
+    }
+
+    /**
+     * Restores an archived report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function restore($id)
+    {
+        return false;
+    }
+}

@@ -1,0 +1,30 @@
+.loader {
+    display: none;
+    background-color: #999;
+    opacity: 0.9;
+    position: absolute;
+    bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    border-radius: 4px;
+
+    &.loading {
+        display: block;
+    }
+
+    .loader-message {
+        padding-top: 30px;
+        color: white;
+    }
+
+    &.full-page .loader-message {
+        padding-top: 70px;
+        color: white;
+    }
+}
+
+.loader-container {
+    position: relative;
+}

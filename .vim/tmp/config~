@@ -1,0 +1,56 @@
+Host dev-hallnet-feynman.servers.hndev.co.uk
+Host dev-hallnet-uspdev.servers.hndev.co.uk
+Host dev-hallnet-ware.servers.hndev.co.uk
+Host dev-yarlington-web.servers.hndev.co.uk
+Host dev-specdesigner-dev.servers.hndev.co.uk
+Host ext-agencycentral-beta.servers.hndev.co.uk
+Host ext-agencycentral-deployment.servers.hndev.co.uk
+Host ext-agencycentral-dev.servers.hndev.co.uk
+Host ext-agencycentral-drupalapi.servers.hndev.co.uk
+Host ext-agencycentral-drupalstaging.servers.hndev.co.uk
+Host ext-oks-web.servers.hndev.co.uk
+Host ext-redmen-web.servers.hndev.co.uk
+Host ext-upskillpeople-web.servers.hndev.co.uk
+Host live-doctorsown-web.servers.hndev.co.uk
+Host live-gjd-web.servers.hndev.co.uk
+Host live-hallnet-activehousing.servers.hndev.co.uk
+Host live-hallnet-basicatlas.servers.hndev.co.uk
+Host live-hallnet-basicbane.servers.hndev.co.uk
+Host live-helena-roomoo.servers.hndev.co.uk
+Host live-helena-web.servers.hndev.co.uk
+Host live-hotshepherd-web.servers.hndev.co.uk
+Host live-inform-deployment.servers.hndev.co.uk
+Host live-inform-wordpress.servers.hndev.co.uk
+Host live-matrix-projecttracker.servers.hndev.co.uk
+Host live-mbha-web.servers.hndev.co.uk
+Host live-nwh-web.servers.hndev.co.uk
+Host live-philprior-ladsandads.servers.hndev.co.uk
+Host live-rfimedia-herbwisdom.servers.hndev.co.uk
+Host live-specdesigner-web.servers.hndev.co.uk
+Host live-ukmg-general.servers.hndev.co.uk
+Host live-ukmg-magento.servers.hndev.co.uk
+Host live-uprocure-web.servers.hndev.co.uk
+Host live-utilityconnections-virtualutilities.servers.hndev.co.uk
+Host srv-hallnet-backups.servers.hndev.co.uk
+Host srv-hallnet-nas.servers.hndev.co.uk
+Host srv-hallnet-nat.servers.hndev.co.uk
+Host srv-hallnet-packages.servers.hndev.co.uk
+Host srv-hallnet-proxy.servers.hndev.co.uk
+Host srv-hallnet-tools.servers.hndev.co.uk
+Host staging-hallnet-activehousing.servers.hndev.co.uk
+Host staging-inform-communitybook.servers.hndev.co.uk
+Host staging-utilityconnections-virtualutilities.servers.hndev.co.uk
+
+Host live-doctorsown-web.servers.hndev.co.uk ext-upskillpeople-web.servers.hndev.co.uk
+User root
+
+Host srv-hallnet-nat.servers.hndev.co.uk
+User ec2-user
+
+Host srv-hallnet-backups.servers.hndev.co.uk
+User backups
+
+Host *.servers.hndev.co.uk
+User ubuntu
+IdentityFile ~/.ssh/{INSERT_KEY_NAME}
+

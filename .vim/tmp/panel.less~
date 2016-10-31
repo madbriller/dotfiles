@@ -1,0 +1,12 @@
+.panel-heading h4 a.panel-indicator:before {
+    font-family: FontAwesome;
+    content: '\f078';
+    color: @brand-primary;
+    display: inline-block;
+    min-width: 16px;
+    .fa-icon-rotate(0deg, 1);
+    transition: all 0.5s ease;
+}
+.panel-heading h4 a.panel-indicator.collapsed:before {
+    .fa-icon-rotate(90deg, 1);
+}

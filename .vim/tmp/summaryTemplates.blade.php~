@@ -1,0 +1,36 @@
+<script type="text/html" id="js-summary-template">
+    <div class="panel panel-default report-summary" style="border-left: solid 8px #%(statusColour)s">
+        <div class="panel-heading clearfix">
+            <h3 class="pull-left panel-title">%(tenantName)s <small style="color: #%(statusColour)s">- %(status)s</small></h3>
+            {{-- This is rawurldecoded to prevent the sprintf symbol survives the process (%(reportId)s) --}}
+        <a href="{{ rawurldecode(action('ReportedRepairsController@show', ['report' => '%(reportId)s'])) }}" class="btn btn-xs btn-primary pull-right hidden-xs">{{ trans('dashboard.ViewUpdate') }}</a>
+        </div>
+        <div class="panel-body">
+            %(problems)s
+            <div class="row">
+                <div class="col-xs-2 col-sm-1 text-center">
+                    <i class="fa fa-map-marker" aria-hidden="true"></i>
+                </div>
+                <div class="col-xs-10 col-sm-11">
+                    <p>%(tenantAddress)s</p>
+                </div>
+            </div>
+            <div class="row visible-xs-block">
+                <div class="col-xs-10 col-xs-offset-2">
+                    <a class="btn btn-primary btn-sm" href="{{ rawurldecode(action('ReportedRepairsController@show', ['report' => '%(reportId)s'])) }}">{{ trans('dashboard.ViewUpdate') }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="js-summary-problem">
+    <div class="row">
+        <div class="col-xs-2 col-sm-1 text-center">
+            <i class="fa fa-wrench" aria-hidden="true"></i>
+        </div>
+        <div class="col-xs-10 col-sm-11">
+            <p>%(sorCode)s - %(sorLabel)s</p>
+        </div>
+    </div>
+</script>

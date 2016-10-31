@@ -1,0 +1,142 @@
+<?php
+
+class positivity extends controller {
+
+    public $section = "positivity";
+
+    public function index($survey_id) {
+
+        $survey_id = intval($survey_id);
+
+        $survey = $this->upskill->survey_details($survey_id);
+
+        $answer_groups = $this->upskill->survey_get_answer_group_types();
+
+        //Default behaviour to support legacy configurations that lack an
+        //explicit answer group.
+        list($answer_group_type_id) = array_keys($answer_groups);
+
+        if (is_array($survey["reports"]["positivity"]) && isset($survey["reports"]["positivity"]["answer_group"])) {
+            $answer_group_type_id = (int)$survey["reports"]["positivity"]["answer_group"];
+        }
+
+        $answer_group = $answer_groups[$answer_group_type_id];
+
+
+        $xmlFile = null;
+
+        if (isset($survey['xml'])) {
+            $xmlFile = $survey['xml'];
+        }
+
+        $survey_structure = $this->upskill->survey_get_structure($survey["survey_id"], false, $xmlFile);
+
+        $survey_results = $this->upskill->survey_results(
+            $survey["survey_id"],
+            $answer_group_type_id,
+            array(),
+            array(),
+            false,
+            true
+        );
+
+        var_dump($survey_results);
+
+        if (!is_array($survey_results)) {
+            $survey_results = array();
+        }
+
+        foreach (array_keys($survey_results) as $sr_key) {
+
+            if ($sr_key !== "*ALL*") {
+
+                $total = 0;
+
+                foreach ($survey_results[$sr_key] as $key => $answer) {
+
+                    if ($key !== "*SCORE*" AND $key !== "*MAXSCORE*") {
+                        $total = $total + $answer;
+                        $survey_results["*ALL*"][$key] += $answer;
+                    }
+                }
+
+                foreach (array_keys($survey_results[$sr_key]) as $key) {
+
+                    if ($key !== "*SCORE*" AND $key !== "*MAXSCORE*") {
+
+                        $survey_results[$sr_key][$key] = ceil(($survey_results[$sr_key][$key] / $total) * 100);
+                    }
+                }
+
+                $survey_results[$sr_key]["*COMPANY_SCORE*"] = $this->upskill->config["survey_list"][$survey_id]["answer_group_settings"][$answer_group_type_id]["target_results"][$sr_key];
+            }
+
+            ksort($survey_results[$sr_key]);
+        }
+
+        if (isset($survey_results["*ALL*"])) {
+
+            $total = 0;
+
+            //get the total score for working out percentage
+            foreach ($survey_results["*ALL*"] as $key => $val) {
+
+                if ($key !== "*SCORE*" && $key !== "*MAXSCORE*") {
+
+                    $total += $val;
+                }
+            }
+
+            //set percentages based on total score
+            foreach ($survey_results["*ALL*"] as $key => $val) {
+
+                if ($key !== "*SCORE*" && $key !== "*MAXSCORE*") {
+
+                    $survey_results["*ALL*"][$key] = ceil(($survey_results["*ALL*"][$key] / $total) * 100);
+                }
+            }
+        }
+
+        $as_pdf = (isset($_GET['pdf']));
+
+        view("page_header", array(
+            "css" => array(
+                BASE_PATH . "/css/positivity.css"
+            ),
+            "js" => array(
+                BASE_PATH . "/js/jquery.cookie.js",
+                BASE_PATH . "/js/handlebars-1.0.0.0.beta.6.js",
+                BASE_PATH . "/js/positivity.js"
+            ),
+            "show_filters" => true,
+            "crumbs" => array(
+                array(
+                    "href" => BASE_PATH,
+                    "label" => lang(conf("config", "lang_code"), "section_title_surveys")
+                ),
+                array(
+                    "href" => BASE_PATH . "/survey/" . $survey_id,
+                    "label" => lang(conf("config", "lang_code"), "section_title_reports")
+                ),
+                array(
+                    "href" => BASE_PATH . "/survey/" . $survey_id . "/" . $this->section,
+                    "label" => lang(conf("config", "lang_code"), "section_title_positivity")
+                )
+            ),
+            "survey_group_id" => $survey_id,
+            "report" => $this->section,
+        ));
+
+        view("reports/positivity", array(
+            "answer_group" => $answer_group,
+            "positivity" => $positivity,
+            "survey" => $survey,
+            "free_text_report_uri" => BASE_PATH . '/survey/' . $survey_id . '/free_text_export',
+            "survey_results" => $survey_results,
+            "survey_structure" => $survey_structure
+        ));
+
+        view("page_footer");
+    }
+
+}

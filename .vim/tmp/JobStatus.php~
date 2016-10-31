@@ -1,0 +1,67 @@
+<?php
+
+namespace ActiveHousingAPI\Models;
+
+/**
+ * JobStatus model.
+ *
+ * @author    Brad Miller <brad@hallnet.co.uk>
+ * @copyright Copyright Hallnet Limited 2016
+ */
+class JobStatus extends AbstractCustomerModel
+{
+    /**
+     * Database table name.
+     *
+     * @var string
+     */
+    protected $table = 'tbl_JobStatus';
+
+    /**
+     * Primary key name.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'JobStatusID';
+
+    /**
+     * The model's fillable attributes.
+     *
+     * @var array[string]
+     */
+    public $fillable = [
+        'Label',
+        'Colour',
+        'Hidden'
+    ];
+
+    /**
+     * Relationship with Report.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function Reports()
+    {
+        return $this->hasMany(
+            'ActiveHousingAPI\Models\Report',
+            'JobStatusID',
+            'JobStatusID'
+        );
+    }
+
+    /**
+     * Relationship with Report.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function ReportJobStatusLogs()
+    {
+        return $this->belongsToMany(
+            'ActiveHousingAPI\Models\Report',
+            'tbl_ReportJobStatusLog',
+            'JobStatusID',
+            'ReportID'
+        )
+        ->withPivot('StatusChangeDate');
+    }
+}

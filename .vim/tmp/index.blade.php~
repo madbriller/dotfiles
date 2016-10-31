@@ -1,0 +1,48 @@
+@section('title', trans('repairs.ReportedRepairs'))
+@extends('layout.dashboard')
+
+@section('content')
+    <div class="content-title">
+        <h2>{{ trans('repairs.ReportedRepairs') }}</h2>
+    </div>
+    <hr>
+    <div class="loader-container">
+        @include('partials.dashboard.loadingOverlay')
+        <div class="content-nav">
+            <ul class="nav nav-pills nav-sm toggles js-toggles">
+                <li>Show: </li>
+                @foreach ($jobStatuses as $jobStatus)
+                    <li role="presentation" class="js-toggle {{ $jobStatus->Hidden ? '' : 'active' }}" data-id="{{ $jobStatus->JobStatusID }}">
+                        <a href="#" style="background-color: #{{ $jobStatus->Colour }};">
+                            <i class="fa fa-circle-o"></i>
+                            {{ $jobStatus->Label }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+
+        <div class="js-summary-container" data-autoload="true" data-update-url="{{ action('ReportedRepairsController@paginate') }}">
+        </div>
+
+        <div class="pull-right">
+            @include('partials.form.paginationControls')
+        </div>
+    </div>
+
+    @include('partials.repairs.summaryTemplates')
+@endsection
+
+@section('pageSpecific.js')
+    <script src="{{ asset(elixir('js/app/plugins/reportedRepairs.js')) }}"></script>
+@endsection
+
+@section('app.jquery.onReady')
+    $('.js-summary-container').reportedRepairs({
+        noFiltersText: {!! json_encode(trans('repairs.NoFilters')) !!},
+        paginationSummary: {!! json_encode(trans('pagination.Summary')) !!},
+        filteredPaginationSummary: {!! json_encode(trans('pagination.FilteredSummary')) !!},
+        toggleSelectedFaIcon: 'fa-check-circle-o',
+        toggleNotSelectedFaIcon: 'fa-circle-o',
+    });
+@endsection

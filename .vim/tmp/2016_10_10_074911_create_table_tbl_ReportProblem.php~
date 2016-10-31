@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class CreateTableTblReportProblem extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('tbl_ReportProblem', function (Blueprint $table) {
+            $table->increments('ReportProblemID');
+            $table->integer('ReportID')->unsigned();
+            $table->integer('ProblemID')->unsigned();
+            $table->integer('SORID')->unsigned();
+            $table->string('SORLabel', 1024)->nullable();
+            $table->text('SORDescription')->nullable();
+            $table->string('ProblemLabel', 255)->nullable();
+            $table->smallInteger('Quantity')->unsigned();
+            $table->integer('PriorityID')->unsigned();
+            $table->text('Description')->nullable();
+            $table->string('AttachedFile', 255)->nullable();
+            $table->string('AttachedFileType', 50)->nullable();
+            $table->timestamp('DeletedAt')->nullable()->default(null);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::drop('tbl_ReportProblem');
+    }
+}

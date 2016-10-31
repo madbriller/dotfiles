@@ -1,0 +1,117 @@
+<?php
+
+namespace ActiveHousing\Repositories;
+
+use ActiveHousing\Models\BaseModel;
+
+class ReportRepository extends AbstractEntityRepository
+{
+    /**
+     * The repositories endpoint.
+     *
+     * @var array[string]
+     */
+    protected $endpoint = ['report'];
+
+    /**
+     * The primary key of the endpoint.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'ReportID';
+
+    /**
+     * Retrieves all archived reports.
+     *
+     * @stubbed:
+     * @return Illuminate\Support\Collection
+     */
+    public function allArchived()
+    {
+        return $this->newCollection();
+    }
+
+    /**
+     * Archives a report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function archive(BaseModel $model)
+    {
+        return false;
+    }
+
+    /**
+     * Restores an archived report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function restore($id)
+    {
+        return false;
+    }
+
+    /**
+     * Returns a page of filtered reports based on criteria.
+     *
+     * @param integer    $limit
+     * @param integer    $offset
+     * @param array[int] $jobStatuses
+     *
+     * @return Illuminate\Support\Collection
+     */
+    public function paginate($limit, $offset, $jobStatuses)
+    {
+        $this->endpointBuilder
+            ->withSegments($this->endpoint)
+            ->withSegment('paginate')
+            ->withQueries([
+                'limit' => $limit,
+                'offset' => $offset
+            ]);
+
+            $this->endpointBuilder->withQuery('jobStatuses', $jobStatuses);
+
+        $uriPath = $this->endpointBuilder->build();
+
+        try {
+            $response = $this->callApi('GET', $uriPath);
+        } catch (ClientException $e) {
+            $response = $e->getResponse();
+            $statusCode = $response->getStatusCode();
+
+            if ($statusCode === 400 || $statusCode === 422) {
+
+                throw new APIValidationException(
+                    json_decode($response->getBody(), true),
+                    $statusCode,
+                    $e
+                );
+            }
+
+            throw new ClientException(
+                $e->getMessage(),
+                $e->getRequest(),
+                $e->getResponse(),
+                $e
+            );
+        }
+
+        $responseBody = json_decode($response->getBody(), true);
+
+        $rawEntities = $responseBody['data'];
+        $collection = $this->newCollection();
+
+        foreach ($rawEntities as $entity) {
+            $model = $this->make($entity);
+            $collection->push($model);
+        }
+
+        return [
+            'data' => $collection,
+            'meta' => $responseBody['meta']
+        ];
+    }
+}

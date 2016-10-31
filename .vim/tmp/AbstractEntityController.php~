@@ -1,0 +1,105 @@
+<?php
+
+namespace ActiveHousing\Http\Controllers;
+
+use Gate;
+use \Illuminate\Http\Request;
+use \ActiveHousing\Http\Requests;
+use \ActiveHousing\Models\BaseModel;
+use \ActiveHousing\Http\Controllers\Controller;
+use \ActiveHousing\Contracts\EntityRepositoryInterface;
+use \ActiveHousing\Repositories\APIValidationException;
+
+abstract class AbstractEntityController extends Controller
+{
+    /**
+     * The primary repository instance; e.g ProblemRepository for the ProblemController.
+     * @var \ActiveHousing\Contract\RepositoryInterface
+     */
+    protected $primaryRepository;
+
+    /**
+     * The class constructor.
+     * @param \Illuminate\Http\Request
+     * @param \ActiveHousing\Contracts\RepositoryInterface $primaryRepository
+     * @return void
+     */
+    public function __construct(Request $request, EntityRepositoryInterface $primaryRepository)
+    {
+        parent::__construct($request);
+
+        $this->primaryRepository = $primaryRepository;
+    }
+
+    /**
+     * Archives a object.
+     * @return Illuminate\Http\Response
+     */
+    public function archive(BaseModel $model)
+    {
+        $responseCode = 400;
+        $results = ['success' => false, 'message' => ''];
+
+        if (Gate::allows('archive-entities')) {
+
+            try {
+                if($this->primaryRepository->archive($model)) {
+                    $results['success'] = true;
+
+                    $responseCode = 200;
+                }
+            } catch (APIValidationException $e) {
+                $results['message'] = $e->getErrors()->first();
+            }
+
+        }
+
+        return response()->json($results, $responseCode);
+    }
+
+    /**
+     * Restores a object.
+     * @return Illuminate\Http\Response
+     */
+    public function restore()
+    {
+        $responseCode = 400;
+        $results = ['success' => false, 'message' => ''];
+
+        if (Gate::allows('restore-entities')) {
+
+            try {
+                if ($this->primaryRepository->restore($this->request->id)) {
+                    $results['success'] = true;
+
+                    $responseCode = 200;
+                }
+            } catch (APIValidationException $e) {
+                $results['message'] = $e->getErrors()->first();
+            }
+
+        }
+
+        return response()->json($results, $responseCode);
+    }
+
+    /**
+     * Attempt to save a given base model.
+     * @param ActiveHousing\Models\BaseModel $model
+     * @param string|null $action
+     * @return Illuminate\Http\Response
+     */
+    protected function redirectOnSave(BaseModel $model, $action)
+    {
+        try {
+            if ($this->primaryRepository->save($model)) {
+                return redirect()->action($action);
+            }
+        } catch (APIValidationException $e) {
+            dd($e->getErrors());
+            return back()->withInput()->withErrors($e->getErrors());
+        }
+
+        return back()->withInput()->withErrors(['General' => trans('form.SaveFail')]);
+    }
+}

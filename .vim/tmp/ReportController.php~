@@ -1,0 +1,187 @@
+<?php
+
+namespace ActiveHousingAPI\Http\Controllers;
+
+use ActiveHousingAPI\Models\Report;
+
+class ReportController extends Controller
+{
+    /**
+     * The validations rules template for this object.
+     *
+     * @var array[string => string]
+     */
+    protected $validationRulesTemplate = [
+        'PersonRef' => 'string|max:255',
+        'HMSJobRef' => 'string|max:255',
+        'SchedulingJobRef' => 'string|max:255',
+        'StartDate' => 'date',
+        'EndDate' => 'date',
+        'SessionID' => 'max:255',
+        'SearchTerm' => 'max:255',
+        'UserAgent' => 'max:512',
+        'IPAddress' => 'max:15',
+        'Staff' => 'boolean',
+        'IntegrationType' => 'string|max:255',
+        'TenantName' => 'string|max:255',
+        'TenantAddress' => 'string',
+        'TenantPostcode' => 'string|max:10',
+        'TenantTelephone' => 'string|max:50',
+        'TenantEmail' => 'string|email|max:255',
+        'TenantAdditionalInfo' => 'string'
+    ];
+
+    /**
+     * Returns a listing of the resource.
+     *
+     * @param ActiveHousingAPI\Models\Report $query
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Report $report)
+    {
+        $this->doValidation([
+            'limit' => 'integer|required_with:offset',
+            'offset' => 'integer',
+        ]);
+
+        $query = $report->newQuery();
+
+        if ($this->request->has('offset')) {
+            $query->skip($this->request->offset);
+        }
+
+        if ($this->request->has('limit')) {
+            $query->take($this->request->limit);
+        }
+
+        return $this->respondSuccess($query->get());
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param \ActiveHousingAPI\Models\Report $report
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Report $report)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['JobStatusID'] = 'required|modelExists:ActiveHousingAPI\Models\Report';
+        $validationRules['SessionID'] .= '|required';
+        $validationRules['SearchTerm'] .= '|required';
+        $validationRules['UserAgent'] .= '|required';
+        $validationRules['IPAddress'] .= '|required';
+        $validationRules['Staff'] .= '|required';
+        $validationRules['IntegrationType'] .= '|required';
+
+        return $this->doValidation($validationRules)
+            ->doSave($report)
+            ->respondSuccess([
+                'id' => $report->ReportID
+            ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param \ActiveHousingAPI\Models\Report $report
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Report $report)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['JobStatusID'] = 'modelExists:ActiveHousingAPI\Models\Report';
+
+        return $this->doValidation($validationRules)
+            ->doSave($report)
+            ->respondSuccess([
+                'id' => $report->ReportID
+            ]);
+    }
+
+    /**
+     * Paginates the resource and provides information regarding the pagination.
+     *
+     * @param \ActiveHousingAPI\Models\Report $report
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function paginate(Report $report)
+    {
+        dd($this->request->input('wat'), $this->request->has('wat'));
+        $this->doValidation([
+            'limit' => 'integer|required_with:offset',
+            'offset' => 'integer',
+            'jobStatuses' => 'array'
+        ]);
+
+        $query = $report->newQuery();
+
+        if ($this->request->has('jobStatuses')) {
+            $query->whereIn(
+                'JobStatusID',
+                $this->request->input('jobStatuses')
+            );
+        }
+
+        $filteredCount = $query->count();
+
+        if ($this->request->has('offset')) {
+            $query->skip($this->request->offset);
+        }
+
+        if ($this->request->has('limit')) {
+            $query->take($this->request->limit);
+        }
+
+        $reports = $query->get();
+
+        return $this->respondSuccess([
+            'data' => $reports,
+            'meta' => [
+                'totalRecords' => $report->count(),
+                'filteredRecords' => $filteredCount,
+                'recordCount' => $reports->count()
+            ]
+        ]);
+    }
+
+    /**
+     * Persists a given repair item model to the database using data from the
+     * request.
+     *
+     * @param \ActiveHousingAPI\Modesl\Report $report
+     *
+     * @return $this
+     */
+    private function doSave(Report $report)
+    {
+        $report->PersonRef = $this->request->input('PersonRef', $report->PersonRef);
+        $report->HMSJobRef = $this->request->input('HMSJobRef', $report->HMSJobRef);
+        $report->JobStatusID = $this->request->input('JobStatusID', $report->JobStatusID);
+        $report->SchedulingJobRef = $this->request->input('SchedulingJobRef', $report->SchedulingJobRef);
+        $report->StartDate = $this->request->input('StartDate', $report->StartDate);
+        $report->EndDate = $this->request->input('EndDate', $report->EndDate);
+        $report->SessionID = $this->request->input('SessionID', $report->SessionID);
+        $report->SearchTerm = $this->request->input('SearchTerm', $report->SearchTerm);
+        $report->UserAgent = $this->request->input('UserAgent', $report->UserAgent);
+        $report->IPAddress = $this->request->input('IPAddress', $report->IPAddress);
+        $report->Staff = $this->request->input('Staff', $report->Staff);
+        $report->IntegrationType = $this->request->input('IntegrationType', $report->IntegrationType);
+        $report->TenantName = $this->request->input('TenantName', $report->TenantName);
+        $report->TenantAddress = $this->request->input('TenantAddress', $report->TenantAddress);
+        $report->TenantPostcode = $this->request->input('TenantPostcode', $report->TenantPostcode);
+        $report->TenantTelephone = $this->request->input('TenantTelephone', $report->TenantTelephone);
+        $report->TenantEmail = $this->request->input('TenantEmail', $report->TenantEmail);
+        $report->TenantAdditionalInfo = $this->request->input('TenantAdditionalInfo', $report->TenantAdditionalInfo);
+
+        $report->save();
+
+        return $this;
+    }
+}

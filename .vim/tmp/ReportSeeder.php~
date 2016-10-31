@@ -1,0 +1,160 @@
+<?php
+
+use ActiveHousingAPI\Models\Report;
+use ActiveHousingAPI\Models\ReportProblem;
+use ActiveHousingAPI\Models\JobStatus;
+use ActiveHousingAPI\Models\AvailabilitySlot;
+use ActiveHousingAPI\Models\Priority;
+use ActiveHousingAPI\Models\SOR;
+use ActiveHousingAPI\Models\Problem;
+use ActiveHousingAPI\Models\Answer;
+use Illuminate\Database\Seeder;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Eloquent\Model;
+
+class ReportSeeder extends AbstractClientSeeder
+{
+    /**
+     * The faker instance used in this class.
+     *
+     * @var Faker\Generator
+     */
+    protected $faker;
+
+    /**
+     * The list of job status available.
+     *
+     * @var Illuminate\Support\Collection
+     */
+    protected $jobStatuses;
+
+    /**
+     * The list of slots available.
+     *
+     * @var Illuminate\Support\Collection
+     */
+    protected $slots;
+
+    /**
+     * The list of problems available.
+     *
+     * @var Illuminate\Support\Collection
+     */
+    protected $problems;
+
+    /**
+     * The list of SOR's available.
+     *
+     * @var Illuminate\Support\Collection
+     */
+    protected $SORs;
+
+    /**
+     * The list of answers available.
+     *
+     * @var Illuminate\Support\Collection
+     */
+    protected $answers;
+
+    /**
+     * The seeder constructor.
+     *
+     * @return static
+     */
+    public function __construct()
+    {
+        $this->faker = Faker\Factory::create();
+        $this->jobStatuses = JobStatus::all()->keyBy('JobStatusID');
+        $this->slots = AvailabilitySlot::all();
+        $this->problems = Problem::all();
+        $this->SORs = SOR::all();
+        $this->answers = Answer::all();
+    }
+
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function seed()
+    {
+        $seeder = $this;
+
+        factory(Report::class, 25)
+            ->create()
+            ->each(
+                function ($report) use ($seeder) {
+                    $jobStatusId = $seeder->jobStatuses->random()->JobStatusID;
+                    $report->JobStatusID = $jobStatusId;
+
+                    $date = $seeder->faker->dateTimeBetween('-1 year', '-1 month');
+
+                    for ($i = 1; $i < $jobStatusId; $i++) {
+                        $report->JobStatusLogs()->save(
+                            $seeder->jobStatuses[$i],
+                            [
+                                'StatusChangeDate' => $date
+                            ]
+                        );
+
+                        $date = $seeder->faker->dateTimeBetween($date, 'now');
+                    }
+
+                    $availabilityCount = rand(1, 6);
+
+                    for ($i = 1; $i <= $availabilityCount; $i++) {
+                        $report->Availability()->save(
+                            $seeder->slots[rand(0, 1)],
+                            [
+                                'DayOfWeek' => $i,
+                                'Available' => true
+                            ]
+                        );
+                    }
+
+                    $reportProblems = factory(ReportProblem::class, rand(1, 3))
+                        ->make();
+
+                    //The factory returns the raw model if just one was created
+                    //so make it into a collection if so.
+                    if ($reportProblems instanceof Model) {
+                        $reportProblems = collect([$reportProblems]);
+                    }
+
+                    $reportProblems->each(
+                        function ($reportProblem) use ($report, $seeder) {
+
+                            $problem = $seeder->problems->random();
+                            $reportProblem->ProblemID = $problem->ProblemID;
+                            $reportProblem->ProblemLabel = $problem->Label;
+
+                            $SOR = $seeder->SORs->random();
+                            $reportProblem->SORID = $SOR->SORID;
+                            $reportProblem->SORLabel = $SOR->Label;
+                            $reportProblem->SORDescription = $SOR->Description;
+
+                            $report->ReportProblems()->save($reportProblem);
+
+                            $answers = $seeder->answers->random(rand(1, 5));
+
+                            if ($answers instanceof model) {
+                                $answers = collect([$answers]);
+                            }
+
+                            foreach ($answers as $key => $answer) {
+
+                                $reportProblem->Answers()->save(
+                                    $answer,
+                                    [
+                                        'QuestionNumber' => $key,
+                                        'QuestionText' => $answer->Question->QuestionText,
+                                        'AnswerText' => $seeder->faker->sentences(2, true)
+                                    ]
+                                );
+                            }
+                        }
+                    );
+                }
+        );
+    }
+}

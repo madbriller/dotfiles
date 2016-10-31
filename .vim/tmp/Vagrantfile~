@@ -1,0 +1,53 @@
+Vagrant.configure(2) do |config|
+
+    #
+    # Config
+    #
+
+    # Set the name of the machine to appear in `vagrant global-status`
+    # config.vm.define "foo" do |foo|
+    # end
+
+    # Give the machine 1 GB of RAM
+    # Required for mysql-server-5.6
+    config.vm.provider "virtualbox" do |v|
+        v.memory = 1024
+    end
+
+    #
+    # Configure the box type.
+    # We're using the latest stable version of Ubuntu (64-bit)
+    # to try and closely match the production server.
+    config.vm.box = "ubuntu/trusty64"
+
+    #
+    # Forward any ports here. By default we open 80 (as 8080) and 3306
+    config.vm.network "forwarded_port", guest: 8080, host: 8080
+    config.vm.network "forwarded_port", guest: 3306, host: 3306
+
+    #
+    # Forward SSH agent
+    config.ssh.forward_agent = true
+
+    #
+    # Permissions
+    config.vm.synced_folder ".", "/vagrant", owner: "vagrant", group: "www-data", mount_options: ["dmode=775", "fmode=664"]
+
+    #
+    # Provisions
+    #
+
+    #
+    # Expose a bitbucket deployment key provisioning /opt/hallnet
+    # config.vm.provision "file", source: "/mnt/share/keys/.keys/bitbucketdeployment", destination: "/tmp/bitbucketdeployment"
+
+    #
+    # The default bootstrap (customise at the end of the file
+    # depending on your project)
+    config.vm.provision :shell, path: "vagrant/bootstrap.sh"
+
+    #
+    # Application-specific bootstrapping
+    config.vm.provision :shell, privileged: false, path: "vagrant/application.sh"
+
+end

@@ -1,0 +1,55 @@
+.dashboard {
+    .dashboard-title h1 {
+        font-size: 22px;
+    }
+
+    .dashboard-sidebar .sidebar-item {
+        padding-top: @base-vertical-padding;
+        padding-bottom: @base-vertical-padding;
+    }
+
+    .dashboard-content {
+        padding-left: @base-horizontal-padding * 6;
+        border-left: 1px solid @border-color;
+
+        .content-breadcrumbs {
+            padding-top: @base-vertical-padding;
+
+            ul {
+                padding-left: 0;
+
+                li {
+                    display: inline-block;
+                    color: @link-color;
+
+                    &:last-child {
+                        color: @font-color;
+                    }
+
+                    &:not(:last-child):after {
+                        content: ">";
+                        color: @font-color;
+                        padding-left: @base-horizontal-padding;
+                    }
+                }
+            }
+        }
+
+        .tab-content {
+            position: relative;
+        }
+
+        .content-title h2 {
+            font-size: 20px;
+            display: inline-block;
+        }
+
+        .content-nav {
+            padding-bottom: @base-vertical-padding * 6;
+        }
+
+        .content-control {
+            padding-bottom: @base-vertical-padding * 6;
+        }
+    }
+}

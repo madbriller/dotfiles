@@ -1,0 +1,120 @@
+<?php
+
+namespace ActiveHousingAPI\Http\Controllers;
+
+use  ActiveHousingAPI\Models\ReportProblem;
+
+class ReportProblemController extends Controller
+{
+    /**
+     * The form validation rules template.
+     *
+     * @var array[string => string]
+     */
+    protected $validationRulesTemplate = [
+        'SORLabel' => 'string|max:1024',
+        'SORDescription' => 'string',
+        'SORCode' => 'string|max:255',
+        'ProblemLabel' => 'string|max:255',
+        'Quantity' => 'integer',
+        'Description' => 'string',
+        'AttachedFile' => 'string|max:255',
+        'AttachedFileType' => 'string|max:50'
+    ];
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @param \ActiveHousingAPI\Models\ReportProblem $reportProblem
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(ReportProblem $reportProblem)
+    {
+        $this->doValidation([
+            'ReportID' => 'integer|modelExists:ActiveHousingAPI\Models\Report'
+        ]);
+
+        $query = $reportProblem->newQuery();
+
+        if ($this->request->has('ReportID')) {
+            $query 
+        }
+
+        return $this->respondSuccess($query->get());
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param \ActiveHousingAPI\Models\ReportProblem $reportProblem
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function store(ReportProblem $reportProblem)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['ReportID'] = 'required|integer|modelExists:ActiveHousingAPI\Models\ReportProblem';
+        $validationRules['ProblemID'] = 'required|integer|modelExists:ActiveHousingAPI\Models\Problem';
+        $validationRules['SORID'] = 'required|integer|modelExists:ActiveHousingAPI\Models\SOR';
+        $validationRules['PriorityID'] = 'required|integer|modelExists:ActiveHousingAPI\Models\Priority';
+
+        return $this->doValidation($validationRules)
+            ->doSave($reportProblem)
+            ->respondSuccess([
+                'id' => $reportProblem->ReportProblemID
+            ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param \ActiveHousingAPI\Models\ReportProblem $reportProblem
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function update(ReportProblem $reportProblem)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['ReportID'] = 'integer|modelExists:ActiveHousingAPI\Models\ReportProblem';
+        $validationRules['ProblemID'] = 'integer|modelExists:ActiveHousingAPI\Models\Problem';
+        $validationRules['SORID'] = 'integer|modelExists:ActiveHousingAPI\Models\SOR';
+        $validationRules['PriorityID'] = 'integer|modelExists:ActiveHousingAPI\Models\Priority';
+
+        return $this->doValidation($validationRules)
+            ->doSave($reportProblem)
+            ->respondSuccess([
+                'id' => $reportProblem->ReportProblemID
+            ]);
+    }
+
+    /**
+     * Persists a given report problem to the database using data from the
+     * request.
+     *
+     * @param ReportProblem $reportProblem
+     *
+     * @return $this
+     */
+    private function doSave(ReportProblem $reportProblem)
+    {
+        $reportProblem->ReportID = $this->request->input('ReportID', $reportProblem->ReportID);
+        $reportProblem->ProblemID = $this->request->input('ProblemID', $reportProblem->ProblemID);
+        $reportProblem->SORID = $this->request->input('SORID', $reportProblem->SORID);
+        $reportProblem->SORLabel = $this->request->input('SORLabel', $reportProblem->SORLabel);
+        $reportProblem->SORDescription = $this->request->input('SORDescription', $reportProblem->SORDescription);
+        $reportProblem->SORCode = $this->request->input('SORCode', $reportProblem->SORCode);
+        $reportProblem->ProblemLabel = $this->request->input('ProblemLabel', $reportProblem->ProblemLabel);
+        $reportProblem->Quantity = $this->request->input('Quantity', $reportProblem->Quantity);
+        $reportProblem->PriorityID = $this->request->input('PriorityID', $reportProblem->PriorityID);
+        $reportProblem->Description = $this->request->input('Description', $reportProblem->Description);
+        $reportProblem->AttachedFile = $this->request->input('AttachedFile', $reportProblem->AttachedFile);
+        $reportProblem->AttachedFileType = $this->request->input('AttachedFileType', $reportProblem->AttachedFileType);
+
+        $reportProblem->save();
+
+        return $this;
+    }
+}

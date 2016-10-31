@@ -1,0 +1,93 @@
+<?php
+
+namespace ActiveHousing\Repositories;
+
+use ActiveHousing\Models\BaseModel;
+
+class ReportProblemAnswerRepository extends AbstractEntityRepository
+{
+    /**
+     * The repositories endpoint.
+     *
+     * @var array[string]
+     */
+    protected $endpoint = ['reportProblemAnswer'];
+
+    /**
+     * The primary key of the endpoint.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'ReportProblemAnswerID';
+
+    /**
+     * Retrieves all archived report problem answers.
+     *
+     * @stubbed:
+     * @return Illuminate\Support\Collection
+     */
+    public function allArchived()
+    {
+        return $this->newCollection();
+    }
+
+    /**
+     * Archives a report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function archive(BaseModel $model)
+    {
+        return false;
+    }
+
+    /**
+     * Restores an archived report.
+     *
+     * @stubbed:
+     * @return false
+     */
+    public function restore($id)
+    {
+        return false;
+    }
+
+    /**
+     * Returns the report problem answers for a given report problem.
+     *
+     * @param int $id
+     *
+     * @return Illuminate\Support\Collection
+     */
+    public function forReportProblem($id)
+    {
+        $uriPath = $this->endpointBuilder
+            ->withSegments($this->endpoint)
+            ->withQuery('reportProblemId', $id)
+            ->build();
+
+        $response = $this->callApi('GET', $uriPath);
+
+        return $this->buildCollection($response);
+    }
+
+    /**
+     * Returnns the report problem answers for a given report.
+     *
+     * @param int $id Id of the report to search for.
+     *
+     * @return Illuminate\Support\Collection
+     */
+    public function forReport($id)
+    {
+        $uriPath = $this->endpointBuilder
+            ->withSegments($this->endpoint)
+            ->withQuery('reportId', $id)
+            ->build();
+
+        $response = $this->callApi('GET', $uriPath);
+
+        return $this->buildCollection($response);
+    }
+}

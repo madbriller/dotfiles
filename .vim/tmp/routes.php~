@@ -1,0 +1,158 @@
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| Application Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register all of the routes for an application.
+| It's a breeze. Simply tell Laravel the URIs it should respond to
+| and give it the controller to call when that URI is requested.
+|
+*/
+
+Route::get('/', 'MainController@index');
+
+Route::get('auth/login', 'AuthController@showLogin');
+Route::post('auth/doLogin', 'AuthController@doLogin');
+Route::get('auth/logout', 'AuthController@logout');
+
+Route::get('maintenance/heartbeat', 'MainController@maintenanceHeartbeat')->middleware('ajax');
+
+Route::group(['middleware' => 'auth', 'as' => 'Dashboard::'], function() {
+    Route::group(['middleware' => 'ajax'], function() {
+        Route::post('upload/s3/image/public', 'UploadController@publicS3ImageUpload');
+        Route::post('maintenance/toggle', 'MainController@maintenanceToggle');
+    });
+
+    Route::group(['as' => 'ProblemCategory::'], function() {
+        Route::get('categories', ['uses' => 'ProblemCategoryController@index', 'as' => 'Index']);
+
+        Route::get('categories/add', ['uses' => 'ProblemCategoryController@addEdit', 'as' => 'Add']);
+        Route::get('categories/{category}', ['uses' => 'ProblemCategoryController@addEdit', 'as' => 'Edit']);
+
+        Route::post('categories/{category?}', 'ProblemCategoryController@store');
+
+        Route::group(['middleware' => 'ajax'], function() {
+            Route::get('categories/all', 'ProblemCategoryController@all');
+            Route::get('categories/archived', 'ProblemCategoryController@allArchived');
+            Route::delete('categories/{category}', 'ProblemCategoryController@archive');
+            Route::get('categories/restore/{id}', 'ProblemCategoryController@restore');
+        });
+    });
+
+    Route::group(['as' => 'Problem::'], function() {
+        Route::get('problems', ['uses' => 'ProblemController@index', 'as' => 'Index']);
+
+        Route::get('problems/add', ['uses' => 'ProblemController@addEdit', 'as' => 'Add']);
+        Route::get('problems/{problem}', ['uses' => 'ProblemController@addEdit', 'as' => 'Edit']);
+
+        Route::post('problems/{problem?}', 'ProblemController@store');
+
+        Route::group(['middleware' => 'ajax'], function() {
+            Route::get('problems/all', 'ProblemController@all');
+            Route::get('problems/archived', 'ProblemController@allArchived');
+            Route::delete('problems/{problem}', 'ProblemController@archive');
+            Route::get('problems/restore/{id}', 'ProblemController@restore');
+        });
+    });
+
+    Route::group(['as' => 'SORFilteringQuestion::'], function() {
+        Route::get('questions', ['uses' => 'SORQuestionController@index', 'as' => 'Index']);
+
+        Route::get('questions/add', ['uses' => 'SORQuestionController@addEdit', 'as' => 'Add']);
+        Route::get('questions/{question}', ['uses' => 'SORQuestionController@addEdit', 'as' => 'Edit']);
+
+        Route::post('questions/{question?}', 'SORQuestionController@store');
+
+        Route::group(['middleware' => 'ajax'], function() {
+            Route::get('questions/all', 'SORQuestionController@all');
+            Route::get('questions/archived', 'SORQuestionController@allArchived');
+            Route::delete('questions/{question}', 'SORQuestionController@archive');
+            Route::get('questions/restore/{id}', 'SORQuestionController@restore');
+        });
+    });
+
+    Route::group(['as' => 'SORRecord::'], function() {
+        Route::get('records', ['uses' => 'SORRecordController@index', 'as' => 'Index']);
+
+        Route::get('records/add', ['uses' => 'SORRecordController@addEdit', 'as' => 'Add']);
+        Route::get('records/{record}', ['uses' => 'SORRecordController@addEdit', 'as' => 'Edit']);
+
+        Route::post('records/{record?}', 'SORRecordController@store');
+
+        Route::group(['middleware' => 'ajax'], function() {
+            Route::get('records/all', 'SORRecordController@all');
+            Route::get('records/archived', 'SORRecordController@allArchived');
+            Route::delete('records/{record}', 'SORRecordController@archive');
+            Route::get('records/restore/{id}', 'SORRecordController@restore');
+        });
+    });
+
+    Route::group(['as' => 'User::', 'middleware' => 'policy.gate:access-users'], function() {
+        Route::get('users', ['uses' => 'UserController@index', 'as' => 'Index']);
+
+        Route::get('users/add', ['uses' => 'UserController@addEdit', 'as' => 'Add']);
+        Route::get('users/{user}', ['uses' => 'UserController@addEdit', 'as' => 'Edit']);
+
+        Route::post('users/{user?}', 'UserController@store');
+
+        Route::group(['middleware' => 'ajax'], function() {
+            Route::get('users/all', 'UserController@all');
+            Route::get('users/archived', 'UserController@allArchived');
+            Route::delete('users/{user}', 'UserController@archive');
+            Route::get('users/restore/{id}', 'UserController@restore');
+        });
+    });
+
+    Route::group(['as' => 'Audit::', 'middleware' => 'policy.gate:access-audits'], function() {
+        Route::get('audit', ['uses' => 'AuditController@index', 'as' => 'Index']);
+        Route::get('audit/{audit}', ['uses' => 'AuditController@view', 'as' => 'View']);
+
+        Route::group(['middleware' => 'ajax'], function() {
+            Route::get('audit/search', 'AuditController@search');
+            Route::get('audit/all', 'AuditController@all');
+        });
+    });
+
+    Route::get('options/global', ['uses' => 'SettingsController@globals', 'as' => 'GlobalOptions']);
+    Route::post('options/global', 'SettingsController@storeGlobals');
+    Route::get('options/global/manage', ['uses' => 'SettingsController@manageGlobal', 'as' => 'GlobalOptions::Manage']);
+    Route::get('options/attributes', ['uses' => 'SettingsController@attributes', 'as' => 'AttributeOptions']);
+
+    Route::group(['middleware' => 'ajax'], function() {
+        Route::delete('options/attribute/{attributeValue}', 'SettingsController@removeAttributeValue');
+        Route::post('options/attribute/add', 'SettingsController@storeAttributeValue');
+        Route::put('options/attribute/{attributeValue}', 'SettingsController@storeAttributeValue');
+
+        Route::delete('options/priority/{priority}', 'SettingsController@removePriority');
+        Route::post('options/priority/add', 'SettingsController@storePriority');
+        Route::put('options/priority/{priority}', 'SettingsController@storePriority');
+
+        Route::post('options/global/new', 'SettingsController@storeNewGlobal');
+        Route::delete('options/global/remove/{setting}', 'SettingsController@removeGlobal');
+    });
+
+    Route::group(['as' => 'Statistics::', 'middleware' => 'policy.gate:access-statistics'], function() {
+        Route::get('stats/weekly', ['uses' => 'StatsController@weekly', 'as' => 'Weekly']);
+        Route::get('stats/monthly', ['uses' => 'StatsController@monthly', 'as' => 'Monthly']);;
+    });
+
+    Route::group(['middleware' => ['policy.gate:access-statistics']], function() {
+        Route::get('stats/weekly/all', 'StatsController@allWeekly');
+        Route::get('stats/monthly/all', 'StatsController@allMonthly');
+
+        Route::get('stats/weekly/csv', 'StatsController@csvWeekly');
+        Route::get('stats/monthly/csv', 'StatsController@csvMonthly');
+    });
+
+    Route::group(['as' => 'Repairs::', 'middleware' => 'policy.gate:access-repairs'], function() {
+        Route::get('repairs/reported', ['uses' => 'ReportedRepairsController@index', 'as' => 'Reported']);
+        Route::get('repairs/{report}, ['uses' => 'ReportedRepairsController@show', 'as' => 'Report']);
+
+        Route::group(['middleware' => 'ajax'], function() {
+            Route::get('repairs/reported/paginate', ['uses' => 'ReportedRepairsController@paginate', 'as' => 'Paginate']);
+        });
+    });
+
+});

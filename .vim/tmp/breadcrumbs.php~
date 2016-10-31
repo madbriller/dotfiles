@@ -1,0 +1,94 @@
+<?php
+
+Breadcrumbs::register('Dashboard::', function ($breadcrumbs) {
+    $breadcrumbs->push(trans('dashboard.Dashboard'), '');
+});
+
+$entities = [
+    'ProblemCategory',
+    'Problem',
+    'SORFilteringQuestion',
+    'SORRecord',
+    'User'
+];
+
+foreach ($entities as $entity) {
+    $routePrefix = 'Dashboard::' . $entity;
+
+    Breadcrumbs::register($name = $routePrefix . '::Index', function ($breadcrumbs) use ($name, $entity) {
+        $breadcrumbs->parent('Dashboard::');
+        $breadcrumbs->push(trans_choice('dashboard.' . $entity, 20), route($name));
+    });
+
+    Breadcrumbs::register($name = $routePrefix . '::Add', function ($breadcrumbs) use ($name, $entity) {
+        $breadcrumbs->parent('Dashboard::' . $entity . '::Index');
+        $breadcrumbs->push(trans('breadcrumbs.' . $entity . 'Add'), route($name));
+    });
+
+    Breadcrumbs::register($name = $routePrefix . '::Edit', function ($breadcrumbs, $entityId) use ($name, $entity) {
+        $breadcrumbs->parent('Dashboard::' . $entity . '::Index');
+
+        $entityText = sprintf(
+            trans('breadcrumbs.' . $entity . 'Edit'),
+            $entityId
+        );
+
+        $breadcrumbs->push($entityText, route($name));
+    });
+}
+
+
+Breadcrumbs::register($name = 'Dashboard::GlobalOptions', function ($breadcrumbs) use ($name) {
+    $breadcrumbs->parent('Dashboard::');
+    $breadcrumbs->push(trans('options.Global'), route($name));
+});
+
+Breadcrumbs::register('Dashboard::GlobalOptions::Manage', function ($breadcrumbs) {
+    $breadcrumbs->parent('Dashboard::GlobalOptions');
+    $breadcrumbs->push(trans('options.ManageGlobal'));
+});
+
+Breadcrumbs::register('Dashboard::AttributeOptions', function ($breadcrumbs) {
+    $breadcrumbs->parent('Dashboard::');
+    $breadcrumbs->push(trans('options.Attribute'));
+});
+
+Breadcrumbs::register('Dashboard::Audit::Index', function ($breadcrumbs) {
+    $breadcrumbs->parent('Dashboard::');
+    $breadcrumbs->push(trans_choice('dashboard.Audit', 20), action('AuditController@index'));
+});
+
+Breadcrumbs::register('Dashboard::Audit::View', function ($breadcrumbs, $entityId) {
+    $breadcrumbs->parent('Dashboard::Audit::Index');
+
+    $entityText = sprintf(
+        trans('breadcrumbs.AuditView'),
+        $entityId
+    );
+    $breadcrumbs->push(trans_choice($entityText, 20));
+});
+
+Breadcrumbs::register('Dashboard::Statistics', function ($breadcrumbs) {
+    $breadcrumbs->parent('Dashboard::');
+    $breadcrumbs->push(trans('dashboard.Statistics'));
+});
+
+Breadcrumbs::register('Dashboard::Statistics::Weekly', function ($breadcrumbs) {
+    $breadcrumbs->parent('Dashboard::Statistics');
+    $breadcrumbs->push(trans('stats.Weekly'));
+});
+
+Breadcrumbs::register('Dashboard::Statistics::Monthly', function ($breadcrumbs) {
+    $breadcrumbs->parent('Dashboard::Statistics');
+    $breadcrumbs->push(trans('stats.Monthly'));
+});
+
+Breadcrumbs::register('Dashboard::Repairs::Reported', function ($breadcrumbs) {
+    $breadcrumbs->parent('Dashboard::');
+    $breadcrumbs->push(trans('repairs.ReportedRepairs'));
+});
+
+Breadcrumbs::register('Dashboard::Repairs::Report', function ($breadcrumbs, $entityId) {
+    $breadcrumbs->parent('Dashboard::');
+    $breadcrumbs->push(sprintf(trans('repairs.Repair'), $entityId));
+});

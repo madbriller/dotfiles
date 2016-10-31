@@ -1,0 +1,121 @@
+<?php
+
+namespace ActiveHousingAPI\Models;
+
+/**
+ * ReportProblem model.
+ *
+ * @author    Brad Miller <brad@hallnet.co.uk>
+ * @copyright Copyright Hallnet Limited 2016
+ */
+class ReportProblem extends AbstractCustomerModel
+{
+    /**
+     * Database table name.
+     *
+     * @var string
+     */
+    protected $table = 'tbl_ReportProblem';
+
+    /**
+     * Primary key name.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'ReportProblemID';
+
+    /**
+     * The attributes on this model which are fillable.
+     *
+     * @var array[string]
+     */
+    protected $fillable = [
+        'ReportID',
+        'ProblemID',
+        'SORID',
+        'SORLabel',
+        'SORDescription',
+        'ProblemLabel',
+        'Quantity',
+        'PriorityID',
+        'Description',
+        'AttachedFile',
+        'AttachedFileType'
+    ];
+
+    /**
+     * Relationship with Report.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function Report()
+    {
+        return $this->belongsTo(
+            'ActiveHousingAPI\Models\Report',
+            'ReportID',
+            'ReportID'
+        );
+    }
+
+    /**
+     * Relationship with ReportProblemAnswer.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function Answers()
+    {
+        return $this->belongsToMany(
+            'ActiveHousingAPI\Models\Answer',
+            'tbl_ReportProblemAnswer',
+            'ReportProblemID',
+            'AnswerID'
+        )
+        ->withPivot(
+            'QuestionNumber',
+            'QuestionText',
+            'AnswerText'
+        );
+    }
+
+    /**
+     * Relationship with Priority.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function Priority()
+    {
+        return $this->belongsTo(
+            'ActiveHousingAPI\Models\Priority',
+            'PriorityID',
+            'PriorityID'
+        );
+    }
+
+    /**
+     * Relationship with SOR.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function SOR()
+    {
+        return $this->belongsTo(
+            'ActiveHousingAPI\Models\SOR',
+            'SORID',
+            'SORID'
+        );
+    }
+
+    /**
+     * Relationship with Problem.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function Problem()
+    {
+        return $this->belongsTo(
+            'ActiveHousingAPI\Models\Problem',
+            'ProblemID',
+            'ProblemID'
+        );
+    }
+}

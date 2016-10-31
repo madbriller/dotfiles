@@ -1,0 +1,353 @@
+/*!
+ * Copyright (c) 2015 Robin Malburn
+ * Released under the MIT license.
+ * See the file LICENSE for copying permission.
+*/
+;(function(root, factory){
+    "use strict";
+
+    if (typeof define === "function" && define.amd) {
+        //Register our plugin as an anonymous module, defining jQuery as a
+        //dependency.
+        define(["jquery"], factory);
+    } else {
+        //AMD is not available, so use the copy of jQuery attached to our
+        //current root (Window by default).
+        factory(root.jQuery);
+    }
+
+}(this, function($) {
+    "use strict";
+
+    //Define the name of your plugin;  this name will be used to access the
+    //plugin through jQuery, e.g. $("body").defaultPluginName().
+    var pluginName = "reportedRepairs";
+
+    //The Plugin object construtor.  Initialisation logic should be placed here
+    //following the assignment statements.
+    var Plugin = function(el, options){
+        var self = this;
+        self.options = options;
+        self.element = el;
+        self.$element = $(el);
+        self.page = 0;
+        self.limit = 10;
+        self.summaryTemplate = $(self.options.summaryTemplateSelector).html();
+        self.problemTemplate = $(self.options.problemTemplateSelector).html();
+        self.$next = $(self.options.nextSelector);
+        self.$previous = $(self.options.previousSelector);
+        self.$loader = $(self.options.loaderSelector);
+        self.$paginationSummary = $(self.options.paginationSummarySelector);
+        self.$toggles = $(self.options.toggleSelector);
+
+        self.unregisterBindings();
+
+        self.registerBindings();
+
+        if (self.options.autoload === true) {
+            self.update();
+        }
+    };
+
+    /**
+     * Register any relevant event bindings for this Plugin.
+     * @return void
+     */
+    Plugin.prototype.registerBindings = function() {
+        var self = this;
+
+        self.$next.on('click', function(event) {
+            if (self.$next.parent('li').hasClass('disabled')) {
+                event.preventDefault();
+
+                return;
+            }
+
+            self.page += 1;
+
+            self.update();
+
+            $(this).trigger('blur');
+        });
+
+        self.$previous.on('click', function(event) {
+            if (self.$previous.parent('li').hasClass('disabled')) {
+                event.preventDefault();
+
+                return;
+            }
+
+            self.page -= 1;
+
+            self.update();
+
+            $(this).trigger('blur');
+        });
+
+        self.$toggles.on('click', '.js-toggle', function(event) {
+            var $this = $(this);
+
+            $this.toggleClass('active');
+
+            var $faIcon = $this.find('i.fa');
+            $faIcon.toggleClass(self.options.toggleSelectedFaIcon);
+            $faIcon.toggleClass(self.options.toggleNotSelectedFaIcon);
+
+            self.page = 0;
+
+            self.update();
+
+        });
+    };
+
+    /**
+     * Unregister any event bindings bound by the Plugin.
+     * @return void
+     */
+    Plugin.prototype.unregisterBindings = function() {
+    };
+
+    /**
+     * Updates the list of reported repairs.
+     *
+     * @return void
+     */
+    Plugin.prototype.update = function() {
+        var self = this;
+
+        var jobStatuses = self.buildJobStatuses();
+
+        if (jobStatuses.length !== 0 ) {
+            //self.$loader.addClass(self.options.loadingClass);
+
+
+            var xhr = $.ajax({
+                url: self.options.updateUrl,
+                method: 'GET',
+                dataType: 'json',
+                data: {
+                    limit: self.limit,
+                    offset: self.page * self.limit,
+                    jobStatuses: jobStatuses
+                }
+            });
+
+            xhr.done(function (response) {
+                self.$element.html('');
+
+                $.each(response.data, function(key, report) {
+                    self.draw(report);
+                });
+
+                self.updatePagination(response);
+                self.$loader.removeClass(self.options.loadingClass);
+            });
+        } else {
+            self.$element.html(self.options.noFiltersText);
+            self.$paginationSummary.html('');
+        }
+    };
+
+    /**
+     * Draws a given report.
+     *
+     * @param object report The report to draw.
+     *
+     * @return void
+     */
+    Plugin.prototype.draw = function(report) {
+        var self = this;
+
+        var problemHtml = '';
+
+        $.each(report.Problems, function(key, problem) {
+            problemHtml += s.sprintf(
+                self.problemTemplate,
+                {
+                    sorLabel: problem.SORLabel,
+                    sorCode: problem.SORCode
+                }
+            );
+        });
+
+        var html = s.sprintf(
+            self.summaryTemplate,
+            {
+                problems: problemHtml,
+                status: report.JobStatus.Label,
+                statusColour: report.JobStatus.Colour,
+                tenantName: report.TenantName,
+                tenantAddress: report.TenantAddress,
+                reportId: report.ReportID
+            }
+        );
+
+        self.$element.prepend(html);
+    };
+
+    /**
+     * Updates the pagination elements on the page.
+     *
+     * @param object response The response.
+     *
+     * @return void
+     */
+    Plugin.prototype.updatePagination = function(response) {
+        var self = this;
+
+        if ((self.page + 1) * self.limit > response.meta.filteredRecords) {
+            self.$next.parent('li').addClass('disabled');
+        } else {
+            self.$next.parent('li').removeClass('disabled');
+        }
+
+        if (self.page > 0) {
+            self.$previous.parent('li').removeClass('disabled');
+        } else {
+            self.$previous.parent('li').addClass('disabled');
+        }
+
+        var paginationSummaryText = self.options.paginationSummary;
+
+        if (response.meta.totalRecords !== response.meta.filteredRecords) {
+            var paginationSummaryText = self.options.filteredPaginationSummary;
+        }
+
+
+        var start = self.page * self.limit;
+
+        paginationSummaryText = s.sprintf(
+            paginationSummaryText,
+            {
+                start: start,
+                end: start + response.meta.recordCount,
+                filtered: response.meta.filteredRecords,
+                total: response.meta.totalRecords
+            }
+        );
+
+        self.$paginationSummary.text(paginationSummaryText);
+    };
+
+    Plugin.prototype.buildJobStatuses = function() {
+        var self = this;
+        var jobStatuses = [];
+
+        self.$toggles.find('.js-toggle').each(function() {
+            var $this = $(this);
+
+            if ($this.hasClass('active')) {
+                jobStatuses.push($this.data('id'));
+            }
+        });
+
+        return jobStatuses;
+    };
+
+    //Cache a copy of any existing jQuery plugins with this name to provide
+    //noConflict support.
+    var noConflict = $.fn[pluginName];
+
+    //Dictionary of default values to be assigned to the plugin.  This allows globally
+    //changing default values without needing to override defaults on a per
+    //plugin basis.
+    //@see $.fn.[pluginName].defaults();
+    var defaults = {
+        paginationSummaryTemplateSelector: '#js-filtered-pagination-summary-template',
+        paginationSummarySelector: '.js-pagination-summary',
+        summaryTemplateSelector: '#js-summary-template',
+        problemTemplateSelector: '#js-summary-problem',
+        nextSelector: '.js-next',
+        previousSelector: '.js-previous',
+        loaderSelector: '.loader-container > .loader',
+        loadingClass: 'loading',
+        toggleSelector: '.js-toggles',
+        jobStatuses: [],
+        toggleSelectedFaIcon: 'fa-check-circle-o',
+        toggleNotSelectedFaIcon: 'fa-circle-o',
+    };
+
+    /**
+     * Wrapper around plugin initialisation logic, allowing optional
+     * re-initialisation and method calling with return values.
+     * @return mixed Defaults to the collection the method was called on, else
+     * when calling a method on the plugin, returns the first returned value
+     * from the collection.
+     */
+    $.fn[pluginName] = function(action){
+        //Grab any additional arguments that may have been passed through.
+        //This allows passing arguments to methods called on our plugin.
+        var args = Array.prototype.slice.call(arguments, 1);
+        var result = this;
+        var collection = this;
+
+        this.each(function(){
+
+            var $this = $(this);
+            var instance = $this.data(pluginName);
+            var data = $.extend({}, $this.data());
+
+            //If our plugin is already instantiated, remove it from the data
+            //object to avoid merging an old instance of the plugin into our
+            //options.
+            if (instance instanceof Plugin) {
+                delete data[pluginName];
+            }
+
+            var options = $.extend(
+                true,
+                {},
+                defaults,
+                instance instanceof Plugin && instance.options,
+                data,
+                typeof action === "object" && action
+            );
+
+            //If an instance of our plugin has not yet been initialised, or if
+            //the action is an object and thus should be treated as a new
+            //configuration, (re)initialise the plugin and store it on the
+            //element.
+            if((instance instanceof Plugin) === false || typeof action === "object"){
+                instance = new Plugin(this, options);
+                $this.data(pluginName, instance);
+            }
+
+            if(typeof action === "string" && typeof instance[action] === "function"){
+                var tmp = instance[action].apply(instance, args);
+
+                if(result === collection && tmp !== undefined){
+                    result = tmp;
+                }
+            }
+        });
+
+        return result;
+    };
+
+    /**
+     * Restores any previously bound plugins with the same name as ours and
+     * returns an instance of our jQuery bindings to allow noConflict support.
+     * @return function
+     */
+    $.fn[pluginName].noConflict = function(){
+        var current = $.fn[pluginName];
+
+        $.fn[pluginName] = noConflict;
+
+        return current;
+    };
+
+    /**
+     * Return or update our default options object to allow global default
+     * modification.
+     * @param object newDefaults new default dictionary to merge.
+     * @return object
+     */
+    $.fn[pluginName].defaults = function(newDefaults){
+        if (typeof newDefaults === "object") {
+            defaults = $.extend(true, {}, defaults, newDefaults);
+        }
+
+        return defaults;
+    };
+}));

@@ -1,0 +1,225 @@
+<?php
+
+namespace ActiveHousingAPI\Http\Controllers;
+
+use DB;
+use Validator;
+use Illuminate\Http\Request;
+use ActiveHousingAPI\Models\SOR;
+use Illuminate\Support\MessageBag;
+use ActiveHousingAPI\Http\Requests;
+use ActiveHousingAPI\Models\Attribute;
+
+class SORController extends Controller
+{
+    /**
+     * The form validation rule template.
+     * @var array
+     */
+    protected $validationRulesTemplate = [
+        'Code' => 'string|max:255',
+        'Label' => 'string|max:1024',
+        'Description' => 'string',
+        'PriorityID' => 'modelExists:ActiveHousingAPI\Models\Priority',
+        'SMV' => 'numeric|min:0|max:65535',
+        'EstimationQuestion' => 'string|max:1024',
+        'EstimationOptions' => 'required_with:EstimationQuestion|array',
+        'Attributes' => 'array',
+    ];
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @param \ActiveHousingAPI\Models\SOR $query
+     * @return \Illuminate\Http\Response
+     */
+    public function index(SOR $query)
+    {
+        $this->doValidation([
+            'sort' => 'in:Code,Label|required_with:sortDirection',
+            'sortDirection' => 'in:asc,desc',
+            'archived' => 'boolean',
+        ]);
+
+        if ($this->request->has('sort')){
+            $direction = $this->request->input('sortDirection', 'asc');
+
+            $query = $query->orderBy($this->request->sort, $direction);
+        }
+
+        if ($this->request->has('archived') and $this->request->archived){
+            $query = $query->onlyTrashed();
+        }
+
+        return $this->respondSuccess($query->get());
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param \ActiveHousingAPI\Models\SOR $sor
+     * @return \Illuminate\Http\Response
+     */
+    public function store(SOR $sor)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['Code'] .= '|required|modelUnique:ActiveHousingAPI\Models\SOR,Code';
+        $validationRules['Label'] .= '|required';
+        $validationRules['PriorityID'] .= '|required';
+        if (Attribute::count() > 0) {
+            $validationRules['Attributes'] .= '|required';
+        }
+
+        $validationRules = $this->addEstimationOptionsRules($validationRules);
+        $validationRules = $this->addAttributeRules($validationRules);
+
+        $validationAttributes = [];
+        $validationAttributes = $this->addEstimationOptionAttributes($validationAttributes);
+        $validationAttributes = $this->addAttributeAttributes($validationAttributes);
+
+        $this->doValidation($validationRules, $validationAttributes);
+
+        $this->doSave($sor);
+
+        return $this->respondSuccess([
+            'id' => $sor->SORID
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \ActiveHousingAPI\Models\SOR $sor
+     * @return \Illuminate\Http\Response
+     */
+    public function update(SOR $sor)
+    {
+        $validationRules = $this->validationRulesTemplate;
+
+        $validationRules['Code'] .= '|modelUnique:ActiveHousingAPI\Models\SOR,Code,'.$sor->SORID.',SORID';
+
+        $validationRules = $this->addEstimationOptionsRules($validationRules);
+        $validationRules = $this->addAttributeRules($validationRules);
+
+        $validationAttributes = [];
+        $validationAttributes = $this->addEstimationOptionAttributes($validationAttributes);
+        $validationAttributes = $this->addAttributeAttributes($validationAttributes);
+
+
+        $this->doValidation($validationRules, $validationAttributes);
+
+        $this->doSave($sor);
+
+        return $this->respondSuccess([
+            'id' => $sor->SORID,
+        ]);
+    }
+
+    /**
+     * Adds validation rules for each estimation option provided in the request.
+     * @var array $rules
+     */
+    private function addEstimationOptionsRules(array $rules)
+    {
+        if (is_array($this->request->EstimationOptions)) {
+            foreach ($this->request->EstimationOptions as $key => $estimationOption) {
+                $rules['EstimationOptions.'.$key.'.Label'] = 'required|max:255|string';
+                $rules['EstimationOptions.'.$key.'.Value'] = 'required|numeric|between:0,99999.99';
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Adds validation rules for each attribute that is present in the system.
+     * @param array $validationRules
+     * @return array
+     */
+    private function addAttributeRules(array $validationRules)
+    {
+        foreach (Attribute::all() as $attribute) {
+            $fieldName = sprintf(
+                'Attributes.%s',
+                $attribute['Name']
+            );
+
+            $validationRules[$fieldName] = 'required_with:Attributes|integer';
+        }
+
+        return $validationRules;
+    }
+
+    /**
+     * Adds attribute names for each attribute in the system.
+     * @param array $validationAttributes
+     * @return array
+     */
+    private function addAttributeAttributes(array $validationAttributes)
+    {
+        foreach (Attribute::all() as $attribute) {
+            $validationAttributes['Attribute.'.$attribute['Name']] = trans('attribute.'.$attribute['Name']);
+        }
+
+        return $validationAttributes;
+    }
+
+    /**
+     * Adds attribute names for each given estimation option.
+     * @param array $validationAttributes
+     * @return array
+     */
+    private function addEstimationOptionAttributes(array $validationAttributes)
+    {
+        if (is_array($this->request->EstimationOptions)) {
+            foreach ($this->request->EstimationOptions as $key => $option) {
+                $validationAttributes['EstimationOptions.'.$key.'.Label'] = trans('dashboard.Label');
+                $validationAttributes['EstimationOptions.'.$key.'.Value'] = trans('dashboard.Value');
+            }
+        }
+
+        return $validationAttributes;
+    }
+
+    /**
+     * Persists a given priority model to the database.
+     * @param \ActiveHousingAPI\Models\SOR $sor
+     * @return void
+     */
+    private function doSave(SOR $sor)
+    {
+        $sor->Code = $this->request->input('Code', $sor->Code);
+        $sor->Label = $this->request->input('Label', $sor->Label);
+        $sor->Description = $this->request->input('Description', $sor->Description);
+        $sor->PriorityID = $this->request->input('PriorityID', $sor->PriorityID);
+        $sor->SMV = $this->request->input('SMV', $sor->SMV);
+        $sor->EstimationQuestion = $this->request->input('EstimationQuestion', $sor->EstimationQuestion);
+
+        DB::beginTransaction();
+
+        $sor->save();
+
+        if ($this->request->has('EstimationOptions')) {
+            $sor->syncEstimationOptions($this->request->EstimationOptions);
+        } else {
+            $sor->EstimationOptions()->forceDelete();
+        }
+
+        if ($this->request->has('Attributes')) {
+            $attributes = [];
+
+            //If zero has been sent in we do not sync that as it means an attribute value 
+            //wasn't provided.
+            foreach ($this->request->Attributes as $attribute) {
+                if ($attribute > 0) {
+                    $attributes[] = $attribute;
+                }
+            }
+
+            $sor->AttributeValues()->sync($attributes);
+        }
+
+        DB::commit();
+    }
+}

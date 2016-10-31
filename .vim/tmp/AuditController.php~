@@ -1,0 +1,80 @@
+<?php
+
+namespace ActiveHousingAPI\Http\Controllers;
+
+use Validator;
+use Illuminate\Http\Request;
+use ActiveHousingAPI\Models\Audit;
+use ActiveHousingAPI\Http\Requests;
+
+class AuditController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     * @param \ActiveHousingAPI\Models\Audit $query
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Validator $validator, Audit $query)
+    {
+        $this->doValidation([
+            'userId' => 'int|exists:tbl_User,UserID',
+            'uri' => 'string|max:255',
+            'updatesonly' => 'boolean',
+            'limit' => 'integer|required_with:offset',
+            'offset' => 'integer',
+            'sort' => 'required_with:sortDirection|string',
+            'sortDirection' => 'string|in:asc,desc',
+            'startDate' => 'required_with:endDate|date_format:Y-m-d H:i|before:endDate',
+            'endDate' => 'required_with:startDate|date_format:Y-m-d H:i|after:startDate',
+        ]);
+
+        if ($this->request->has('UserID')){
+            $query = $query->where('tbl_Audit.UserID', $this->request->UserID);
+        }
+
+        if ($this->request->has('URI')){
+            $query = $query->where('URI', 'LIKE', '%' . $this->request->URI . '%');
+        }
+
+        if ($this->request->has('startDate') && $this->request->has('endDate')) {
+            $query = $query->whereBetween('AuditTime', [$this->request->startDate, $this->request->endDate]);
+        }
+
+        if ($this->request->has('updatesonly') && $this->request->updatesonly){
+            $query = $query->whereIn('Method', ['POST', 'PUT', 'PATCH', 'DELETE']);
+
+            $query = $query->where(function($query) {
+                $query->orWhere('URI', 'LIKE', '%/destroy');
+                $query->orWhere('URI', 'LIKE', '%/restore');
+            });
+        }
+
+        if ($this->request->has('offset')) {
+            $query = $query->skip($this->request->offset);
+        }
+
+        if ($this->request->has('limit')) {
+            $query = $query->take($this->request->limit);
+        }
+
+        $orderColumn = $this->request->input('sort', null);
+        $orderDir = $this->request->input('sortDirection', null);
+
+        if ($orderColumn !== null && $orderDir !== null) {
+            $orderDir = $orderDir === 'asc' ? 'asc' : 'desc'; 
+
+            if ($orderColumn === 'User') {
+                $query->leftJoin('tbl_User', 'tbl_Audit.UserID', '=', 'tbl_User.UserID');
+                $query->orderByRaw('CONCAT(FirstNames, LastName, Email) ' . $orderDir);
+            } else {
+                $query = $query->orderBy(
+                    $orderColumn,
+                    $orderDir
+                );
+            }
+
+        }
+
+        return $this->respondSuccess($query->get());
+    }
+}

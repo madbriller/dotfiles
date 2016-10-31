@@ -1,0 +1,184 @@
+<?php
+
+/**
+ * Defines the Client Class for exposing bespoke behaviour hooks
+ * @author Robin Malburn <robin@hallnet.co.uk>
+ */
+
+
+/**
+ * Require the parent client class
+ */
+require_once("client.class.php");
+
+
+/**
+ * Client class
+ *
+ * Provides hooks for bespoke client logic.  Used by all clients, unless
+ * overridden with a client specific extension.
+ *
+ * @author Robin Malburn <robin@hallnet.co.uk>
+ */
+class CoopcollegeportalClient extends Client
+{
+    /**
+     * The user types used in the class.
+     * @const int
+     */
+    const STAFF_USER_TYPE = 1;
+
+    /**
+     * The job types used in the class.
+     * @const int
+     */
+    const STAFF_JOB_TYPE = 1;
+
+    /**
+     * New starter required fields logic
+     * @return array
+     */
+    public function new_starter_required_fields()
+    {
+        $result = array();
+
+        $result['firstName'] = '';
+        $result['lastName'] = '';
+        $result['DOB'] = '';
+        $result['Email'] = '';
+        $result['Email_confirm'] = '';
+
+        $reportingLevel = 4;
+        $reportingOrgs = array();
+
+        if (isset($this->upskill->logged_in_user['ReportAccess'])) {
+            $reportingLevel = key($this->upskill->logged_in_user['ReportAccess']);
+            $reportingOrgs = $this->upskill->logged_in_user['ReportAccess'][$reportingLevel];
+        }
+
+        $filterType = 'parent';
+
+        if ($reportingLevel === 1) {
+            $orgs[1] = array();
+            $filterType = 'org_id';
+        } else {
+            $orgs = array();
+
+            for ($orgLevel = 1; $orgLevel < $reportingLevel; $orgLevel++) {
+                $orgs[$orgLevel] = array();
+            }
+
+            krsort($orgs);
+        }
+
+        $topLevel = key($orgs);
+
+        $filter = array();
+
+        if (!empty($reportingOrgs)) {
+            $filter[$filterType] = $reportingOrgs;
+        }
+
+        $selectableOrgs = $this->upskill->org_list(
+            $topLevel, //Org level
+            $filter, //Filters
+            false, //Ignore excludes
+            false //Ignore restrictions, we're passing in the relevant filters already.
+        );
+
+        foreach ($selectableOrgs as $org) {
+            $orgs[$topLevel][$org['orgID']] = $org['orgLongName'];
+        }
+
+        foreach ($orgs as $key => $org) {
+            $result['org'.$key.'ID'] = $org;
+        }
+
+        $result['userProfileID'] = array();
+
+        foreach ($this->upskill->user_profile_list() as $userProfileID => $userProfile) {
+            $result["userProfileID"][$userProfileID] = $userProfile;
+        }
+
+        return $result;
+    }
+
+    /**
+     * New starter validation rules logic; place holder to extended where required by individual client classes.
+     * @return array Array of Code Igniter form validation rules.
+     */
+    public function new_starter_validation_rules()
+    {
+        return array(
+            array(
+                "field" => "firstname",
+                "label" => "lang:label_firstname",
+                "rules" => "required|trim"
+            ),
+            array(
+                "field" => "lastname",
+                "label" => "lang:label_lastname",
+                "rules" => "required|trim"
+            ),
+            array(
+                "field" => "dob",
+                "label" => "lang:label_dob",
+                "rules" => "required|trim|callback__valid_date[d-m-Y]"
+            ),
+            array(
+                'field' => 'email',
+                'label' => 'lang:label_email',
+                'rules' => 'required|trim|valid_email|callback__unique_email'
+            ),
+            array(
+                "field" => "email_confirm",
+                "label" => "lang:label_email_confirm",
+                "rules" => "required|trim|matches[email]"
+            ),
+            array(
+                "field" => "org1id",
+                "label" => "lang:label_org1id",
+                "rules" => "trim|callback__valid_org1_id"
+            ),
+            array(
+                "field" => "userprofileid",
+                "label" => "lang:label_userprofileid",
+                "rules" => "required|trim|callback__valid_user_profile_id"
+            )
+        );
+    }
+
+    /**
+     * New starter process logic; place holder to extended where required by individual client classes
+     * @param  Array $details Array of $details entered in the NSU interface for processing.
+     * @return Array of user details based on / extended from the $details parameter.
+     */
+    public function new_starter_process($details)
+    {
+        $result = array();
+
+        $defaults = $this->upskill->user_defaults();
+
+        $result['countryID'] = $defaults['countryDefault'];
+        $result['languageID'] = $defaults['languageDefault'];
+        $result['employmentTypeID'] = $defaults['employmentTypeDefault'];
+        $result['joiningDate'] = date('Y-m-d', time());
+        $result['companyStartDate'] = $result['joiningDate'];
+        $result['org1ID'] = $details['org1id'];
+        $result['password'] = $defaults['passwordDefault'];
+        $result['changePasswordFlag'] = true;
+
+        $dob = DateTime::createFromFormat("d-m-Y", $details["dob"]);
+        $result['DOB'] = $dob->format("Y-m-d");
+
+        $result['email'] = trim($details['email']);
+        $result['userName'] = $result['email'];
+        $result['firstName'] = $details['firstname'];
+        $result['lastName'] = $details['lastname'];
+        $result['userTypeID'] = self::STAFF_USER_TYPE;
+        $result['jobTypeID'] = self::STAFF_JOB_TYPE;
+        $result['userProfileID'] = $details['userprofileid'];
+
+        return $result;
+    }
+}

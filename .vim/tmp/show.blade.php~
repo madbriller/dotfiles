@@ -1,0 +1,59 @@
+@section('title', sprintf(trans('repairs.Repair'), $report->ReportID))
+@extends('layout.dashboard')
+
+@section('content')
+    <div class="content-title">
+        <h2>{{ sprintf(trans('repairs.Repair'), $report->ReportID) }}</h2>
+    </div>
+    <hr>
+    <div class="row content-summary">
+        <div class="col-xs-4 col-sm-2">
+            <span class="h6" style="color: #{{ $report->JobStatus['Colour'] }}">
+                {{ strtoupper($report->JobStatus['Label']) }}
+            </span>
+        </div>
+        <div class="col-xs-8 col-sm-10">
+            <span class="h6 text-muted">
+                {{ sprintf(trans('repairs.CreatedDate'), $created) }}
+            </span>
+        </div>
+    </div>
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab">
+                <h4 class="panel-title">
+                    <a class="panel-indicator title collapsed" role="button" data-toggle="collapse" href="#tenant" aria-expanded="true" aria-controls="tenant">
+                        {{ trans('repairs.TenantInformation') }}
+                    </a>
+                </h4>
+            </div>
+            <div id="tenant" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <p><strong>{{ $report->TenantName }}</strong></p>
+                    <p class="phone-number small">{{ $report->TenantTelephone }}</p>
+                    <p class="small">{{ $report->TenantAddress }}</p>
+                    <hr>
+                    <h6><strong>{{ trans('repairs.Availability') }}</strong></h6>
+                </div>
+            </div>
+        </div>
+        @foreach ($problems as $key => $problem)
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab">
+                <h4 class="panel-title">
+                    <a class="panel-indicator title collapsed" role="button" data-toggle="collapse" href="#{{$key}}problem" aria-expanded="true" aria-controls="tenant">
+                        {{ sprintf(trans('repairs.RepairItem#'), $key + 1) }}
+                    </a>
+                </h4>
+            </div>
+            <div id="{{$key}}problem" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <h5>{{ $problem->SORCode }} - {{ $problem->SORLabel }}</h5>
+                    <br/>
+                    <p class="small">{{ $problem->Description }}</p>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+@endsection
